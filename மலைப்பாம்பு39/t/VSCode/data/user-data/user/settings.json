@@ -1,0 +1,14 @@
+{ 
+"python.interpreterPath": "${env:WINPYDIR}\\\\python.exe", 
+"jupyter.widgetScriptSources": [ 
+"jsdelivr.com", 
+"unpkg.com" 
+],
+"workbench.editorAssociations": [
+    {
+        "viewType": "jupyter.notebook.ipynb",
+        "filenamePattern": "*.ipynb"
+    }
+],
+
+} 

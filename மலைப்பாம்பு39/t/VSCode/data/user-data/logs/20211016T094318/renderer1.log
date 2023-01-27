@@ -1,0 +1,12 @@
+[2021-10-16 09:43:21.960] [renderer1] [error] net::ERR_NAME_NOT_RESOLVED: Error: net::ERR_NAME_NOT_RESOLVED
+    at SimpleURLLoaderWrapper.<anonymous> (electron/js2c/browser_init.js:109:6508)
+    at SimpleURLLoaderWrapper.emit (events.js:315:20)
+[2021-10-16 09:43:59.729] [renderer1] [error] net::ERR_NAME_NOT_RESOLVED: Error: net::ERR_NAME_NOT_RESOLVED
+    at SimpleURLLoaderWrapper.<anonymous> (electron/js2c/browser_init.js:109:6508)
+    at SimpleURLLoaderWrapper.emit (events.js:315:20)
+[2021-10-16 09:44:28.355] [renderer1] [error] XHR failed: Error: XHR failed
+    at XMLHttpRequest.f.onerror (file:///C:/வட்டு/PortableApps/WPy64-3940/t/vscode/resources/app/out/vs/workbench/workbench.desktop.main.js:76:24378)
+[2021-10-16 10:14:01.222] [renderer1] [error] getaddrinfo ENOTFOUND default.exp-tas.com: Error: getaddrinfo ENOTFOUND default.exp-tas.com
+	at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:66:26)
+[2021-10-16 10:14:02.406] [renderer1] [error] getaddrinfo ENOTFOUND default.exp-tas.com: Error: getaddrinfo ENOTFOUND default.exp-tas.com
+	at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:66:26)

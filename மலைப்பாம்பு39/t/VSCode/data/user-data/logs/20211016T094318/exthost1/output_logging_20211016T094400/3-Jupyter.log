@@ -1,0 +1,33 @@
+Info 2021-10-16 09:44:00: ZMQ install verified.
+Info 2021-10-16 09:44:00: id is e3ae8d32-94e1-4b7d-a4d2-fe157184a25e
+Error 2021-10-16 09:44:00: Jupyter Extension (Error in Failed to update settings.json, method:fixSettingsFile): [EntryNotFound (FileSystemError): Unable to read file 'c:\Users\InThiruA\AppData\Roaming\Code\User\settings.json' (Error: Unable to resolve non-existing file 'c:\Users\InThiruA\AppData\Roaming\Code\User\settings.json')
+	at _handleError (c:\வட்டு\PortableApps\WPy64-3940\t\vscode\resources\app\out\vs\workbench\services\extensions\node\extensionHostProcess.js:86:154942)
+	at processTicksAndRejections (internal/process/task_queues.js:97:5)
+	at async m.readFile (c:\வட்டு\PortableApps\WPy64-3940\t\vscode\data\extensions\ms-toolsai.jupyter-2021.5.745244803\out\client\extension.js:49:796765)
+	at async g.fixSettingsFile (c:\வட்டு\PortableApps\WPy64-3940\t\vscode\data\extensions\ms-toolsai.jupyter-2021.5.745244803\out\client\extension.js:47:295052)
+	at async Promise.all (index 0)
+	at async g.updateSettings (c:\வட்டு\PortableApps\WPy64-3940\t\vscode\data\extensions\ms-toolsai.jupyter-2021.5.745244803\out\client\extension.js:47:296772)] {
+  code: 'FileNotFound'
+}
+Error 2021-10-16 09:44:00: Jupyter Extension (Error in Failed to update settings.json, method:fixSettingsFile): [EntryNotFound (FileSystemError): Unable to read file 'd:\G\nitsm-devtools-python\.vscode\settings.json' (Error: Unable to resolve non-existing file 'd:\G\nitsm-devtools-python\.vscode\settings.json')
+	at _handleError (c:\வட்டு\PortableApps\WPy64-3940\t\vscode\resources\app\out\vs\workbench\services\extensions\node\extensionHostProcess.js:86:154942)
+	at processTicksAndRejections (internal/process/task_queues.js:97:5)
+	at async m.readFile (c:\வட்டு\PortableApps\WPy64-3940\t\vscode\data\extensions\ms-toolsai.jupyter-2021.5.745244803\out\client\extension.js:49:796765)
+	at async g.fixSettingsFile (c:\வட்டு\PortableApps\WPy64-3940\t\vscode\data\extensions\ms-toolsai.jupyter-2021.5.745244803\out\client\extension.js:47:295052)
+	at async Promise.all (index 1)
+	at async g.updateSettings (c:\வட்டு\PortableApps\WPy64-3940\t\vscode\data\extensions\ms-toolsai.jupyter-2021.5.745244803\out\client\extension.js:47:296772)] {
+  code: 'FileNotFound'
+}
+Info 2021-10-16 09:44:01: Generated random key of length 2048
+Info 2021-10-16 09:44:01: Successfully generated keyfile with OS PRNG
+Info 2021-10-16 10:42:59: Shutting down notebooks for 5db74cde-ab91-49b4-b55d-c5cd964f1f3a
+Info 2021-10-16 10:42:59: Disposing HostJupyterExecution 568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Disposing super HostJupyterExecution 568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Disposing HostJupyterExecution 568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Finished disposing HostJupyterExecution  568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Disposing HostJupyterExecution 568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Finished disposing HostJupyterExecution  568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Getting live share API during dispose HostJupyterExecution 568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Detaching HostJupyterExecution 568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Cleaning up server cache 568d5128-8948-4b73-be8b-53d8e1055961
+Info 2021-10-16 10:42:59: Finished disposing HostJupyterExecution  568d5128-8948-4b73-be8b-53d8e1055961

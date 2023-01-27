@@ -1,0 +1,25 @@
+[2021-04-13 19:40:18.342] [exthost] [info] extension host started
+[2021-04-13 19:40:18.726] [exthost] [info] ExtensionService#_doActivateExtension vscode.microsoft-authentication {"startup":false,"extensionId":{"value":"vscode.microsoft-authentication","_lower":"vscode.microsoft-authentication"},"activationEvent":"onAuthenticationRequest:microsoft"}
+[2021-04-13 19:40:18.727] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/microsoft-authentication/dist/extension.js
+[2021-04-13 19:40:18.779] [exthost] [info] ExtensionService#_doActivateExtension vscode.debug-auto-launch {"startup":true,"extensionId":{"value":"vscode.debug-auto-launch","_lower":"vscode.debug-auto-launch"},"activationEvent":"*"}
+[2021-04-13 19:40:18.779] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/debug-auto-launch/dist/extension
+[2021-04-13 19:40:18.807] [exthost] [info] ExtensionService#_doActivateExtension vscode.git {"startup":true,"extensionId":{"value":"vscode.github","_lower":"vscode.github"},"activationEvent":"*"}
+[2021-04-13 19:40:18.807] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/git/dist/main
+[2021-04-13 19:40:18.950] [exthost] [info] WSL is not installed, so could not detect WSL profiles
+[2021-04-13 19:40:19.213] [exthost] [info] ExtensionService#_doActivateExtension ms-vscode.js-debug {"startup":false,"extensionId":{"value":"ms-vscode.js-debug","_lower":"ms-vscode.js-debug"},"activationEvent":"onCommand:extension.js-debug.clearAutoAttachVariables"}
+[2021-04-13 19:40:19.213] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/ms-vscode.js-debug/src/extension.js
+[2021-04-13 19:40:19.806] [exthost] [info] ExtensionService#_doActivateExtension vscode.github-authentication {"startup":false,"extensionId":{"value":"vscode.github-authentication","_lower":"vscode.github-authentication"},"activationEvent":"onAuthenticationRequest:github"}
+[2021-04-13 19:40:19.806] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/github-authentication/dist/extension.js
+[2021-04-13 19:40:19.838] [exthost] [info] ExtensionService#_doActivateExtension vscode.github {"startup":true,"extensionId":{"value":"vscode.github","_lower":"vscode.github"},"activationEvent":"*"}
+[2021-04-13 19:40:19.838] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/github/dist/extension.js
+[2021-04-13 19:40:19.868] [exthost] [info] eager extensions activated
+[2021-04-13 19:40:19.882] [exthost] [info] ExtensionService#_doActivateExtension vscode.emmet {"startup":false,"extensionId":{"value":"vscode.emmet","_lower":"vscode.emmet"},"activationEvent":"onStartupFinished"}
+[2021-04-13 19:40:19.882] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/emmet/dist/node/emmetNodeMain
+[2021-04-13 19:40:19.901] [exthost] [info] ExtensionService#_doActivateExtension vscode.merge-conflict {"startup":false,"extensionId":{"value":"vscode.merge-conflict","_lower":"vscode.merge-conflict"},"activationEvent":"onStartupFinished"}
+[2021-04-13 19:40:19.901] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/merge-conflict/dist/mergeConflictMain
+[2021-04-13 19:40:19.907] [exthost] [info] ExtensionService#_doActivateExtension ms-vscode-remote.remote-wsl-recommender {"startup":false,"extensionId":{"value":"ms-vscode-remote.remote-wsl-recommender","_lower":"ms-vscode-remote.remote-wsl-recommender"},"activationEvent":"onStartupFinished"}
+[2021-04-13 19:40:19.907] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/ms-vscode-remote.remote-wsl-recommender/dist/extension.js
+[2021-04-13 19:40:19.931] [exthost] [info] ExtensionService#_doActivateExtension vscode.testing-editor-contributions {"startup":false,"extensionId":{"value":"vscode.testing-editor-contributions","_lower":"vscode.testing-editor-contributions"},"activationEvent":"onStartupFinished"}
+[2021-04-13 19:40:19.931] [exthost] [info] ExtensionService#loadCommonJSModule file:///c:/WinP/bd38/bu/WPy64-3890/t/vscode/resources/app/extensions/testing-editor-contributions/dist/extension.js
+[2021-04-13 19:42:41.552] [exthost] [info] extension host terminating: received terminate message from renderer
+[2021-04-13 19:42:42.569] [exthost] [info] exiting with code 0

@@ -1,0 +1,13 @@
+[2021-04-13 19:40:35.530] [sharedprocess] [info] Installing extension: ms-python.python
+[2021-04-13 19:40:46.095] [sharedprocess] [info] Downloaded extension: ms-python.python undefined
+[2021-04-13 19:40:57.191] [sharedprocess] [info] Extracted extension to C:\WinP\bd38\bu\WPy64-3890\t\vscode\data\extensions\.90a5a4e4-41fd-4a99-b1fa-cc33d675cfe8: ms-python.python
+[2021-04-13 19:40:57.261] [sharedprocess] [info] Renamed to C:\WinP\bd38\bu\WPy64-3890\t\vscode\data\extensions\ms-python.python-2021.3.680753044
+[2021-04-13 19:40:57.278] [sharedprocess] [info] Installation completed. ms-python.python
+[2021-04-13 19:40:57.700] [sharedprocess] [info] Installing extension: ms-toolsai.jupyter
+[2021-04-13 19:40:58.040] [sharedprocess] [info] Starting to clean up unused language packs.
+[2021-04-13 19:41:12.366] [sharedprocess] [info] Downloaded extension: ms-toolsai.jupyter undefined
+[2021-04-13 19:41:14.104] [sharedprocess] [info] Extracted extension to C:\WinP\bd38\bu\WPy64-3890\t\vscode\data\extensions\.5a34c618-a0af-4e09-9425-4de0c1e3c683: ms-toolsai.jupyter
+[2021-04-13 19:41:14.152] [sharedprocess] [info] Renamed to C:\WinP\bd38\bu\WPy64-3890\t\vscode\data\extensions\ms-toolsai.jupyter-2021.5.745244803
+[2021-04-13 19:41:14.168] [sharedprocess] [info] Installation completed. ms-toolsai.jupyter
+[2021-04-13 19:41:14.176] [sharedprocess] [info] Extensions installed successfully: ms-toolsai.jupyter
+[2021-04-13 19:41:14.180] [sharedprocess] [info] Extensions installed successfully: ms-python.python
