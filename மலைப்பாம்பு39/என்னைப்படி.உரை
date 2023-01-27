@@ -1,1 +1,4 @@
 unzip code.7z present inside .\t\VScode folder to use the VS code 
+
+Spyder is written in ASCII and does not recognise Unicode in path. So rename the "மலைப்பாம்பு39"
+to something in English to use spyder
