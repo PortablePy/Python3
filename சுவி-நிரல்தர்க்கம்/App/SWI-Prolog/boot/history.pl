@@ -3,7 +3,7 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  1985-2020, University of Amsterdam
+    Copyright (c)  1985-2016, University of Amsterdam
                               VU University Amsterdam
                               CWI Amsterdam
     All rights reserved.
@@ -35,60 +35,49 @@
 */
 
 :- module('$history',
-          [ read_term_with_history/2,           % -Term, +Line
+          [ read_history/6,
             '$save_history_line'/1,             % +Line
             '$clean_history'/0,
             '$load_history'/0,
             '$save_history_event'/1
           ]).
 
-%!  read_term_with_history(-Term, +Options)
+%%  read_history(+History, +Help, +DontStore, +Prompt, -Term, -Bindings)
 %
-%   Read a term guide by Options and  maintain a history similar to most
-%   Unix shells.
-%
+%   Give a prompt using Prompt. The   sequence  '%w' is substituted with
+%   the current event number. Then read a term from the input stream and
+%   perform the history expansion. Return  the   expanded  term  and the
+%   bindings of the variables as with  read/2. entering the term History
+%   makes read_history/5 print the  history.   Help  specifies  the help
+%   command. DontStore is a list of events that need not be stored.
+
 %   When read_history reads a term of   the  form $silent(Goal), it will
 %   call Goal and pretend it has not seen anything. This hook is used by
 %   the GNU-Emacs interface to for   communication between GNU-EMACS and
 %   SWI-Prolog.
 
-read_term_with_history(Term, Options) :-
-    '$option'(prompt(Prompt), Options, '~! ?-'),
-    '$option'(input(Input), Options, user_input),
+read_history(History, Help, DontStore, Prompt, Term, Bindings) :-
     repeat,
         prompt_history(Prompt),
-        '$toplevel':read_query_line(Input, Raw),
-        read_history_(Raw, Term, Options),
+        '$toplevel':read_query_line(user_input, Raw),
+        read_history_(History, Help, DontStore, Raw, Term, Bindings),
     !.
 
-read_history_(Raw, _Term, Options) :-
-    '$option'(show(Raw), Options, history),
+read_history_(History, _, _, History, _, _) :-
     list_history,
     !,
     fail.
-read_history_(Raw, _Term, Options) :-
-    '$option'(help(Raw), Options, '!help'),
-    '$option'(show(Show), Options, '!history'),
-    print_message(help, history(help(Show, Raw))),
+read_history_(Show, Help, _, Help, _, _) :-
+    print_message(help, history(help(Show, Help))),
     !,
     fail.
-read_history_(Raw, Term, Options) :-
+read_history_(History, Help, DontStore, Raw, Term, Bindings) :-
     expand_history(Raw, Expanded, Changed),
     '$save_history_line'(Expanded),
-    '$option'(module(Module), Options, Var),
-    (   Module == Var
-    ->  '$current_typein_module'(Module)
-    ;   true
-    ),
-    (   '$select'(variable_names(Bindings), Options, Options1)
-    ->  true
-    ;   Options1 = Options,
-        i(Bindings)                     % ignore
-    ),
+    '$current_typein_module'(TypeIn),
     catch(read_term_from_atom(Expanded, Term0,
-                              [ module(Module),
-                                variable_names(Bindings0)
-                              | Options1
+                              [ variable_names(Bindings0),
+                                module(TypeIn)
                               ]),
           E,
           (   print_message(error, E),
@@ -99,8 +88,8 @@ read_history_(Raw, Term, Options) :-
         Bindings = Bindings0
     ;   Term0 = '$silent'(Goal)
     ->  user:ignore(Goal),
-        read_term_with_history(Term, Options)
-    ;   save_event(Expanded, Options),
+        read_history(History, Help, DontStore, '', Term, Bindings)
+    ;   save_event(DontStore, Expanded),
         (   Changed == true
         ->  print_message(query, history(expanded(Expanded)))
         ;   true
@@ -109,7 +98,6 @@ read_history_(Raw, Term, Options) :-
         Bindings = Bindings0
     ).
 
-i(_).
 
 %   list_history
 %   Write history events to the current output stream.
@@ -192,16 +180,15 @@ substitute(Old, New, String, Substituted) :-
     !.
 '$save_history_line'(_).
 
-%!  save_event(+Event, +Options)
+%!  save_event(+DoNotSave, +Event)
 %
-%   Save Event into the  history  system unless it appears in the
-%   option `no_save`.
+%   Save Event into the  history  system  if   it  is  not  a  member of
+%   DoNotSave.
 
-save_event(Event, Options) :-
-    '$option'(no_save(Dont), Options),
+save_event(Dont, Event) :-
     memberchk(Event, Dont),
     !.
-save_event(Event, _) :-
+save_event(_, Event) :-
     '$save_history_event'(Event).
 
 %!  '$save_history_event'(+Event) is det.

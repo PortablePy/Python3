@@ -3,9 +3,8 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2013-2022, VU University Amsterdam
+    Copyright (c)  2013-2020, VU University Amsterdam
                               CWI, Amsterdam
-                              SWI-Prolog Solutions b.v
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -57,8 +56,7 @@
     safe_meta/2,                    % Goal, Calls
     safe_meta/3,                    % Goal, Context, Calls
     safe_global_variable/1,         % Name
-    safe_directive/1,               % Module:Goal
-    safe_prolog_flag/2.             % +Name, +Value
+    safe_directive/1.               % Module:Goal
 
 % :- debug(sandbox).
 
@@ -428,22 +426,11 @@ term_expansion(safe_primitive(Goal), Term) :-
     ->  Term = safe_primitive(Goal)
     ;   Term = []
     ).
-term_expansion((safe_primitive(Goal) :- Body), Term) :-
-    (   verify_safe_declaration(Goal)
-    ->  Term = (safe_primitive(Goal) :- Body)
-    ;   Term = []
-    ).
 
 system:term_expansion(sandbox:safe_primitive(Goal), Term) :-
     \+ current_prolog_flag(xref, true),
     (   verify_safe_declaration(Goal)
     ->  Term = sandbox:safe_primitive(Goal)
-    ;   Term = []
-    ).
-system:term_expansion((sandbox:safe_primitive(Goal) :- Body), Term) :-
-    \+ current_prolog_flag(xref, true),
-    (   verify_safe_declaration(Goal)
-    ->  Term = (sandbox:safe_primitive(Goal) :- Body)
     ;   Term = []
     ).
 
@@ -478,13 +465,11 @@ ok_meta(system:assert(_)).
 ok_meta(system:load_files(_,_)).
 ok_meta(system:use_module(_,_)).
 ok_meta(system:use_module(_)).
-ok_meta('$syspreds':predicate_property(_,_)).
 
 verify_predefined_safe_declarations :-
     forall(clause(safe_primitive(Goal), _Body, Ref),
-           ( E = error(F,_),
-             catch(verify_safe_declaration(Goal), E, true),
-             (   nonvar(F)
+           ( catch(verify_safe_declaration(Goal), E, true),
+             (   nonvar(E)
              ->  clause_property(Ref, file(File)),
                  clause_property(Ref, line_count(Line)),
                  print_message(error, bad_safe_declaration(Goal, File, Line))
@@ -519,10 +504,7 @@ safe_primitive(nonvar(_)).
 safe_primitive(system:attvar(_)).
 safe_primitive(integer(_)).
 safe_primitive(float(_)).
-:- if(current_predicate(rational/1)).
 safe_primitive(system:rational(_)).
-safe_primitive(system:rational(_,_,_)).
-:- endif.
 safe_primitive(number(_)).
 safe_primitive(atom(_)).
 safe_primitive(system:blob(_,_)).
@@ -576,13 +558,11 @@ safe_primitive(system:setarg(_,_,_)).
 safe_primitive(system:nb_setarg(_,_,_)).
 safe_primitive(system:nb_linkarg(_,_,_)).
 safe_primitive(functor(_,_,_)).
-safe_primitive(system:functor(_,_,_,_)).
 safe_primitive(_ =.. _).
 safe_primitive(system:compound_name_arity(_,_,_)).
 safe_primitive(system:compound_name_arguments(_,_,_)).
 safe_primitive(system:'$filled_array'(_,_,_,_)).
 safe_primitive(copy_term(_,_)).
-safe_primitive(system:copy_term(_,_,_,_)).
 safe_primitive(system:duplicate_term(_,_)).
 safe_primitive(system:copy_term_nat(_,_)).
 safe_primitive(system:size_abstract_term(_,_,_)).
@@ -661,7 +641,6 @@ safe_primitive(system:sleep(_)).
 safe_primitive(system:thread_self(_)).
 safe_primitive(system:get_time(_)).
 safe_primitive(system:statistics(_,_)).
-:- if(current_prolog_flag(threads,true)).
 safe_primitive(system:thread_statistics(Id,_,_)) :-
     (   var(Id)
     ->  instantiation_error(Id)
@@ -672,7 +651,6 @@ safe_primitive(system:thread_property(Id,_)) :-
     ->  instantiation_error(Id)
     ;   thread_self(Id)
     ).
-:- endif.
 safe_primitive(system:format_time(_,_,_)).
 safe_primitive(system:format_time(_,_,_,_)).
 safe_primitive(system:date_time_stamp(_,_)).
@@ -689,10 +667,6 @@ safe_primitive(asserta(X)) :- safe_assert(X).
 safe_primitive(assertz(X)) :- safe_assert(X).
 safe_primitive(retract(X)) :- safe_assert(X).
 safe_primitive(retractall(X)) :- safe_assert(X).
-safe_primitive('$dcg':dcg_translate_rule(_,_)).
-safe_primitive('$syspreds':predicate_property(Pred, _)) :-
-    nonvar(Pred),
-    Pred \= (_:_).
 
 % We need to do data flow analysis to find the tag of the
 % target key before we can conclude that functions on dicts
@@ -731,7 +705,6 @@ safe_primitive(system:upcase_atom(_,_)).
 safe_primitive(system:is_list(_)).
 safe_primitive(system:memberchk(_,_)).
 safe_primitive(system:'$skip_list'(_,_,_)).
-safe_primitive(system:'$seek_list'(_, _, _, _)).
                                         % attributes
 safe_primitive(system:get_attr(_,_,_)).
 safe_primitive(system:get_attrs(_,_)).
@@ -772,7 +745,7 @@ safe_primitive('$tabling':abolish_all_tables).
 safe_primitive('$tabling':'$wrap_tabled'(Module:_Head, _Mode)) :-
     prolog_load_context(module, Module),
     !.
-safe_primitive('$tabling':'$moded_wrap_tabled'(Module:_Head,_,_,_,_)) :-
+safe_primitive('$tabling':'$moded_wrap_tabled'(Module:_Head,_,_,_)) :-
     prolog_load_context(module, Module),
     !.
 
@@ -1062,7 +1035,6 @@ safe_meta(system:setup_call_catcher_cleanup(0,0,*,0)).
 safe_meta('$attvar':call_residue_vars(0,*)).
 safe_meta('$syspreds':call_with_inference_limit(0,*,*)).
 safe_meta('$syspreds':call_with_depth_limit(0,*,*)).
-safe_meta('$syspreds':undo(0)).
 safe_meta(^(*,0)).
 safe_meta(\+(0)).
 safe_meta(call(0)).
@@ -1074,7 +1046,6 @@ safe_meta(call(5,*,*,*,*,*)).
 safe_meta(call(6,*,*,*,*,*,*)).
 safe_meta('$tabling':start_tabling(*,0)).
 safe_meta('$tabling':start_tabling(*,0,*,*)).
-safe_meta(wfs:call_delays(0,*)).
 
 %!  safe_output(+Output)
 %

@@ -36,7 +36,7 @@
           [ crypt/2
           ]).
 
-:- use_foreign_library(foreign(crypt)).
+:- use_foreign_library(foreign(crypt), install_crypt).
 
 %!   crypt(+Passwd, ?Encripted).
 %

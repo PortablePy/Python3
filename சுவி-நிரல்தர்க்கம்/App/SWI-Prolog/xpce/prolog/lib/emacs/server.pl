@@ -2,7 +2,7 @@
 
     Author:        Jan Wielemaker and Anjo Anjewierden
     E-mail:        J.Wielemaker@cs.vu.nl
-    WWW:           http://www.swi-prolog.org/packages/xpce/
+    WWW:           http://www.swi-prolog.org/projects/xpce/
     Copyright (c)  1985-2012, University of Amsterdam
                               VU University Amsterdam
     All rights reserved.
@@ -107,24 +107,18 @@ server_action((A,B), Socket) :-
     server_action(B, Socket).
 server_action(edit(File), Socket) :-
     !,
-    server_action(edit(File, [], [], wait), Socket).
+    server_action(edit(File, [], []), Socket).
 server_action(edit(File, Line), Socket) :-
     !,
-    server_action(edit(File, Line, [], wait), Socket).
+    server_action(edit(File, Line, []), Socket).
 server_action(edit(File, Line, CharPos), Socket) :-
-    !,
-    server_action(edit(File, Line, CharPos, wait), Socket).
-server_action(edit(File, Line, CharPos, Wait), Socket) :-
     !,
     new(B, emacs_buffer(File)),
     get(B, open, tab, Frame),
     send(Frame, expose),
     get(Frame, editor, Editor),
-    (   Wait == wait
-    ->  new(H, hyper(Socket, Editor, editor, server)),
-        send(H, send_method, @emacs_server_method)
-    ;   true
-    ),
+    new(H, hyper(Socket, Editor, editor, server)),
+    send(H, send_method, @emacs_server_method),
     send(B, check_modified_file),
     (   Line == []
     ->  true

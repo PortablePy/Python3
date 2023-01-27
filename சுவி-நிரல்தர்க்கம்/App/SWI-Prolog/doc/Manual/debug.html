@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 9.0.4 Reference Manual: Section A.14</title><link rel="home" href="index.html">
+<title>SWI-Prolog 8.2.4 Reference Manual: Section A.14</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -238,26 +238,29 @@ Print debug messages and test assertions</span></a></h2>
 
 <p><a id="sec:debug"></a>
 
+<dl class="tags">
+<dt class="tag">author</dt>
+<dd>
+Jan Wielemaker
+</dd>
+</dl>
+
 <p>This library is a replacement for <a class="pred" href="format.html#format/3">format/3</a> 
 for printing debug messages. Messages are assigned a <i>topic</i>. By 
 dynamically enabling or disabling topics the user can select desired 
-messages. Calls to <a class="pred" href="debug.html#debug/3">debug/3</a> 
-and
-<a class="pred" href="debug.html#assertion/1">assertion/1</a> are 
-removed when the code is compiled for optimization unless the Prolog 
-flag <b>optimise_debug</b> is set to <code>true</code>.
+messages. Debug statements are removed when the code is compiled for 
+optimization.
 
-<p>Using the predicate <a class="pred" href="debug.html#assertion/1">assertion/1</a> 
-you can make assumptions about your program explicit, trapping the 
-debugger if the condition does not hold.
-
-<p>Output and actions by these predicates can be configured using <i>hooks</i> 
-to fit your environment. With XPCE, you can use the call below to start 
-a graphical monitoring tool.
+<p>See manual for details. With XPCE, you can use the call below to 
+start a graphical monitoring tool.
 
 <pre class="code">
 ?- prolog_ide(debug_monitor).
 </pre>
+
+<p>Using the predicate <a class="pred" href="debug.html#assertion/1">assertion/1</a> 
+you can make assumptions about your program explicit, trapping the 
+debugger if the condition does not hold.
 
 <dl class="latex">
 <dt class="pubdef"><span class="pred-tag">[semidet]</span><a id="debugging/1"><strong>debugging</strong>(<var>+Topic</var>)</a></dt>
@@ -288,55 +291,12 @@ used from a directive. The latter allows placing debug topics at the
 start of a (load-)file without warnings.
 
 <p>For <a class="pred" href="debug.html#debug/1">debug/1</a>, <var>Topic</var> 
-can be a term <code>Topic &gt; Out</code>, where <var>Out</var> is 
-either a stream or stream-alias or a filename (an atom). This redirects 
-debug information on this topic to the given output. On Linux systems 
-redirection can be used to make the message appear, even if the <code>user_error</code> 
-stream is redefined using
-
-<pre class="code">
-?- debug(Topic &gt; '/proc/self/fd/2').
-</pre>
-
-<p>A platform independent way to get debug messages in the current 
-console (for example, a <code>swipl-win</code> window, or login using <code>ssh</code> 
-to Prolog running an SSH server from the <code>libssh</code> pack) is to 
-use:
-
-<pre class="code">
-?- stream_property(S, alias(user_error)),
-   debug(Topic &gt; S).
-</pre>
-
-<p>Do not forget to disable the debugging using <a class="pred" href="debug.html#nodebug/1">nodebug/1</a> 
-before quitting the console if Prolog must remain running.</dd>
+can be a term <var>Topic</var> <var>&gt;</var> Out, where Out is either 
+a stream or stream-alias or a filename (atom). This redirects debug 
+information on this topic to the given output.</dd>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="list_debug_topics/0"><strong>list_debug_topics</strong></a></dt>
-<dt class="pubdef"><span class="pred-tag">[det]</span><a id="list_debug_topics/1"><strong>list_debug_topics</strong>(<var>+Options</var>)</a></dt>
 <dd class="defbody">
-List currently known topics for <a class="pred" href="debug.html#debug/3">debug/3</a> 
-and their setting. <var>Options</var> is either an atom or string, which 
-is a shorthand for
-<code>[search(String)]</code> or a normal option list. Defined options 
-are:
-
-<dl class="latex">
-<dt><strong>search</strong>(<var>String</var>)</dt>
-<dd class="defbody">
-Only show topics that match <var>String</var>. Match is case insensitive 
-on the printed representation of the term.
-</dd>
-<dt><strong>active</strong>(<var>+Boolean</var>)</dt>
-<dd class="defbody">
-Only print topics that are active (<code>true</code>) or inactive (<code>false</code>).
-</dd>
-<dt><strong>output</strong>(<var>+To</var>)</dt>
-<dd class="defbody">
-Only print topics whose target location matches <var>To</var>. This 
-option implicitly restricts the output to active topics.
-</dd>
-</dl>
-
-</dd>
+List currently known debug topics and their setting.</dd>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="debug_message_context/1"><strong>debug_message_context</strong>(<var>+What</var>)</a></dt>
 <dd class="defbody">
 Specify additional context for debug messages.

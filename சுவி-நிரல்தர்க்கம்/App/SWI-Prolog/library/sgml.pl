@@ -113,7 +113,6 @@
                        case_preserving_attributes(boolean),
                        system_entities(boolean),
                        max_memory(integer),
-                       ignore_doctype(boolean),
                        space(oneof([sgml,preserve,default,remove,strict])),
                        xmlns(atom),
                        xmlns(atom,atom),
@@ -284,6 +283,17 @@ load_dtd(DTD, DtdFile, Options) :-
             close(DtdIn)),
         close(DtdOut)).
 
+split_dtd_options([], [], []).
+split_dtd_options([H|T], [H|TD], S) :-
+    dtd_option(H),
+    !,
+    split_dtd_options(T, TD, S).
+split_dtd_options([H|T], TD, [H|S]) :-
+    split_dtd_options(T, TD, S).
+
+dtd_option(dialect(_)).
+
+
 %!  destroy_dtds
 %
 %   Destroy  DTDs  cached  by  this  thread   as  they  will  become
@@ -304,9 +314,7 @@ register_cleanup :-
     registered_cleanup,
     !.
 register_cleanup :-
-    (   thread_self(main)
-    ->  at_halt(destroy_dtds)
-    ;   current_prolog_flag(threads, true)
+    (   current_prolog_flag(threads, true)
     ->  prolog_listen(this_thread_exit, destroy_dtds)
     ;   true
     ),
@@ -492,7 +500,6 @@ parser_option(case_sensitive_attributes(_)).
 parser_option(case_preserving_attributes(_)).
 parser_option(system_entities(_)).
 parser_option(max_memory(_)).
-parser_option(ignore_doctype(_)).
 parser_option(file(_)).
 parser_option(line(_)).
 parser_option(space(_)).

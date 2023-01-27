@@ -38,8 +38,7 @@
             attach_packs/1,                     % +Dir
             attach_packs/2,                     % +Dir, +Options
             '$pack_detach'/2,                   % +Name, -Dir
-            '$pack_attach'/1,                   % +Dir
-            '$pack_attach'/2
+            '$pack_attach'/1                    % +Dir
           ]).
 
 :- multifile user:file_search_path/2.
@@ -48,6 +47,9 @@
 :- dynamic
     pack_dir/3,                             % Pack, Type, Dir
     pack/2.                                 % Pack, BaseDir
+:- volatile
+    pack_dir/3,
+    pack/2.
 
 user:file_search_path(pack, app_data(pack)).
 
@@ -77,12 +79,9 @@ user:file_search_path(foreign, PackLib) :-
 %   Attach the given package
 
 '$pack_attach'(Dir) :-
-    '$pack_attach'(Dir, []).
-
-'$pack_attach'(Dir, Options) :-
-    attach_package(Dir, Options),
+    attach_package(Dir, []),
     !.
-'$pack_attach'(Dir, _) :-
+'$pack_attach'(Dir) :-
     (   exists_directory(Dir)
     ->  throw(error(existence_error(directory, Dir), _))
     ;   throw(error(domain_error(pack, Dir), _))
@@ -90,8 +89,7 @@ user:file_search_path(foreign, PackLib) :-
 
 %!  attach_packs
 %
-%   Attach  packages  from  all  package    directories.  If  there  are
-%   duplicates the first package found is used.
+%   Attach packages from all package directories.
 
 attach_packs :-
     set_prolog_flag(packs, true),
@@ -104,7 +102,7 @@ attach_packs :-
     (   PackDirs \== []
     ->  remove_dups(PackDirs, UniquePackDirs, []),
         forall('$member'(PackDir, UniquePackDirs),
-               attach_packs(PackDir, [duplicate(keep)]))
+               attach_packs(PackDir))
     ;   true
     ).
 
@@ -234,24 +232,17 @@ update_autoload(PrologDir) :-
     ).
 
 foreign_dir(Pack, PackDir, ForeignDir) :-
+    current_prolog_flag(arch, Arch),
     atomic_list_concat([PackDir, '/lib'], ForeignBaseDir),
     exists_directory(ForeignBaseDir),
     !,
-    (   arch(Arch),
-	atomic_list_concat([PackDir, '/lib/', Arch], ForeignDir),
-        exists_directory(ForeignDir)
+    atomic_list_concat([PackDir, '/lib/', Arch], ForeignDir),
+    (   exists_directory(ForeignDir)
     ->  assertz(pack_dir(Pack, foreign, ForeignDir))
-    ;   findall(Arch, arch(Arch), Archs),
-	print_message(warning, pack(no_arch(Pack, Archs))),
+    ;   print_message(warning, pack(no_arch(Pack, Arch))),
         fail
     ).
 foreign_dir(_, _, (-)).
-
-arch(Arch) :-
-    current_prolog_flag(apple_universal_binary, true),
-    Arch = 'fat-darwin'.
-arch(Arch) :-
-    current_prolog_flag(arch, Arch).
 
 ensure_slash(Dir, SDir) :-
     (   sub_atom(Dir, _, _, 0, /)

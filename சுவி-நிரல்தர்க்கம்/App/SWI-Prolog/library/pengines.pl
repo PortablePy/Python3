@@ -168,8 +168,7 @@ from Prolog or JavaScript.
                      [ delay(number)
                      ]).
 :- predicate_options(pengine_event/2, 2,
-                     [ listen(atom),
-                       pass_to(thread_get_message/3, 3)
+                     [ pass_to(thread_get_message/3, 3)
                      ]).
 :- predicate_options(pengine_pull_response/2, 2,
                      [ pass_to(http_open/3, 3)
@@ -359,25 +358,15 @@ send_message(pengine(Pengine), Event, Options) :-
 
 %!  pengine_request(-Request) is det.
 %
-%   To be used by a pengine to wait  for the next request. Such messages
-%   are placed in the  queue  by   pengine_send/2.  Keeps  the thread in
-%   normal state if an event arrives within a second. Otherwise it waits
-%   for the `idle_limit` setting while   using  thread_idle/2 to minimis
-%   resources.
+%   To be used by a  pengine  to   wait  for  the next request. Such
+%   messages are placed in the queue by pengine_send/2.
 
-pengine_request(Request) :-
-    thread_self(Me),
-    thread_get_message(Me, pengine_request(Request), [timeout(1)]),
-    !.
 pengine_request(Request) :-
     pengine_self(Self),
     get_pengine_application(Self, Application),
-    setting(Application:idle_limit, IdleLimit0),
-    IdleLimit is IdleLimit0-1,
+    setting(Application:idle_limit, IdleLimit),
     thread_self(Me),
-    (   thread_idle(thread_get_message(Me, pengine_request(Request),
-                                       [timeout(IdleLimit)]),
-                    long)
+    (   thread_get_message(Me, pengine_request(Request), [timeout(IdleLimit)])
     ->  true
     ;   Request = destroy
     ).
@@ -920,7 +909,7 @@ properties are:
 
 pengine_property(Id, Prop) :-
     nonvar(Id), nonvar(Prop),
-    pengine_property2(Prop, Id),
+    pengine_property2(Id, Prop),
     !.
 pengine_property(Id, Prop) :-
     pengine_property2(Prop, Id).
@@ -1419,6 +1408,8 @@ destroy_or_continue(Event) :-
         thread_detach(Me),
         pengine_reply(destroy(ID, Event))
     ;   pengine_reply(Event),
+        garbage_collect,                % minimise our footprint
+        trim_stacks,
         guarded_main_loop(ID)
     ).
 

@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 9.0.4 Reference Manual: Section A.1</title><link rel="home" href="index.html">
+<title>SWI-Prolog 8.2.4 Reference Manual: Section A.1</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -400,22 +400,19 @@ to understand why this predicate can fail.</dd>
 <dt class="pubdef"><a id="foreach/2"><strong>foreach</strong>(<var>:Generator, 
 :Goal</var>)</a></dt>
 <dd class="defbody">
-True when the conjunction of <i>instances</i> of <var>Goal</var> created 
-from solutions for <var>Generator</var> is true. Except for term 
-copying, this could be implemented as below.
+True if conjunction of results is true. Unlike <a class="pred" href="forall2.html#forall/2">forall/2</a>, 
+which runs a failure-driven loop that proves <var>Goal</var> for each 
+solution of
+<var>Generator</var>, <a class="pred" href="aggregate.html#foreach/2">foreach/2</a> 
+creates a conjunction. Each member of the conjunction is a copy of <var>Goal</var>, 
+where the variables it shares with <var>Generator</var> are filled with 
+the values from the corresponding solution.
 
-<pre class="code">
-foreach(Generator, Goal) :-
-    findall(Goal, Generator, Goals),
-    maplist(call, Goals).
-</pre>
+<p>The implementation executes <a class="pred" href="forall2.html#forall/2">forall/2</a> 
+if <var>Goal</var> does not contain any variables that are not shared 
+with <var>Generator</var>.
 
-<p>The actual implementation uses <a class="pred" href="allsolutions.html#findall/3">findall/3</a> 
-on a template created from the variables <i>shared</i> between <var>Generator</var> 
-and <var>Goal</var>. Subsequently, it uses every instance of this 
-template to instantiate <var>Goal</var>, call <var>Goal</var> and undo <i>only</i> 
-the instantiation of the template and <i>not</i> other instantiations 
-created by running <var>Goal</var>. Here is an example:
+<p>Here is an example:
 
 <pre class="code">
 ?- foreach(between(1,4,X), dif(X,Y)), Y = 5.
@@ -424,36 +421,13 @@ Y = 5.
 false.
 </pre>
 
-<p>The predicate <a class="pred" href="aggregate.html#foreach/2">foreach/2</a> 
-is mostly used if <var>Goal</var> performs backtrackable destructive 
-assignment on terms. Attributed variables (underlying constraints) are 
-an example. Another example of a backtrackable data structure is in <code>library(hashtable)</code>. 
-If we care only about the side effects (I/O, dynamic database, etc.) or 
-the truth value of <var>Goal</var>, <a class="pred" href="forall2.html#forall/2">forall/2</a> 
-is a faster and simpler alternative. If <var>Goal</var> instantiates its 
-arguments it is will often fail as the argument cannot be instantiated 
-to multiple values. It is possible to incrementally <i>grow</i> an 
-argument:
-
-<pre class="code">
-?- foreach(between(1,4,X), member(X, L)).
-L = [1,2,3,4|_].
-</pre>
-
-<p>Note that SWI-Prolog up to version 8.3.4 created copies of <var>Goal</var> 
-using <a class="pred" href="manipterm.html#copy_term/2">copy_term/2</a> 
-for each iteration, this makes the current implementation unable to 
-properly handle compound terms (in <var>Goal</var>&rsquo;s arguments) 
-that share variables with the <var>Generator</var>. As a workaround you 
-can define a goal that does not use compound terms, like in this 
-example:
-
-<pre class="code">
-mem(E,L) :-  % mem/2 hides the compound argument from foreach/2
-   member(r(E),L).
-
-?- foreach(  between(1,5,N), mem(N,L)).
-</pre>
+<dl class="tags">
+<dt class="tag">bug</dt>
+<dd>
+<var>Goal</var> is copied repeatedly, which may cause problems if 
+attributed variables are involved.
+</dd>
+</dl>
 
 </dd>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="free_variables/4"><strong>free_variables</strong>(<var>:Generator, 

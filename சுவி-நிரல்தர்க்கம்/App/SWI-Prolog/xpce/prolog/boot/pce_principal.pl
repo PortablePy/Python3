@@ -3,10 +3,9 @@
     Author:        Jan Wielemaker and Anjo Anjewierden
     E-mail:        J.Wielemaker@cs.nu.nl
     WWW:           http://www.swi-prolog.nl/projects/xpce/
-    Copyright (c)  1985-2022, University of Amsterdam
+    Copyright (c)  1985-2019, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -68,6 +67,7 @@
           ]).
 :- autoload(library(apply),[convlist/3,maplist/2]).
 :- autoload(library(lists),[member/2,last/2,reverse/2]).
+:- autoload(library(shlib),[load_foreign_library/1]).
 :- autoload(library(swi_compatibility),[pce_info/1]).
 :- autoload(library(system),[unlock_predicate/1]).
 
@@ -196,7 +196,7 @@ missing_(Dir, [Dir|T]) :-
                 ********************************/
 
 init_pce :-
-    catch(use_foreign_library(foreign(pl2xpce)),
+    catch(load_foreign_library(foreign(pl2xpce)),
           error(Error, _Context),           % suppress stack trace
           (   print_message(error, error(Error, _)),
               fail

@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 9.0.4 Reference Manual: Section A.7</title><link rel="home" href="index.html">
+<title>SWI-Prolog 8.2.4 Reference Manual: Section A.7</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -414,12 +414,12 @@ and <code>prefer_rationals</code>.
 List argument errors for <a class="pred" href="format.html#format/2">format/2</a>,3.</dd>
 <dt class="multidef"><span class="pred-tag">[multifile]</span><a id="string_predicate/1"><strong>string_predicate</strong>(<var>:PredicateIndicator</var>)</a></dt>
 <dd class="defbody">
-Multifile hook to disable <a class="pred" href="string.html#list_strings/0">list_strings/0</a> 
+Multifile hook to disable <a class="pred" href="strings.html#list_strings/0">list_strings/0</a> 
 on the given predicate. This is typically used for facts that store 
 strings.</dd>
 <dt class="multidef"><span class="pred-tag">[semidet,multifile]</span><a id="valid_string_goal/1"><strong>valid_string_goal</strong>(<var>+Goal</var>)</a></dt>
 <dd class="defbody">
-Multifile hook that qualifies <var>Goal</var> as valid for <a class="pred" href="string.html#list_strings/0">list_strings/0</a>. 
+Multifile hook that qualifies <var>Goal</var> as valid for <a class="pred" href="strings.html#list_strings/0">list_strings/0</a>. 
 For example, <code>format("Hello world~n")</code> is considered proper 
 use of string constants.</dd>
 <dt class="multidef"><span class="pred-tag">[nondet,multifile]</span><a id="checker/2"><strong>checker</strong>(<var>:Goal, 

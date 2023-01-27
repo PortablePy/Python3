@@ -56,10 +56,10 @@
 
 sicstus:rename_module(sockets, sicstus_sockets).
 
-/** <module> SICStus 3-compatible library(sockets).
+/** <module> SICStus compatible socket library
 
 @tbd Our implementation does not support AF_UNIX sockets.
-@see https://sicstus.sics.se/sicstus/docs/3.12.11/html/sicstus/Sockets.html
+@see http://www.sics.se/sicstus/docs/3.7.1/html/sicstus_28.html
 */
 
 socket(Domain, Socket) :-

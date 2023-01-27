@@ -375,7 +375,7 @@ rdf_flush_journal(Graph, Options) :-
     (   \+ exists_file(File)
     ->  true
     ;   memberchk(min_size(KB), Options),
-        size_file(File, Size),
+        size_file(JournalFile, Size),
         Size / 1024 < KB
     ->  true
     ;   create_db(Graph)

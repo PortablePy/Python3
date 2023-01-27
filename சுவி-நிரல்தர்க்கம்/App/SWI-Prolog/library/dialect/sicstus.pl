@@ -44,12 +44,10 @@
 	    bb_delete/2,		% :Key, -Value
 	    bb_update/3,		% :Key, -Old, +New
 
-	    is_mutable/1,		% @Term
 	    create_mutable/2,		% ?Value, -Mutable
 	    get_mutable/2,		% ?Value, +Mutable
 	    update_mutable/2,		% ?Value, !Mutable
 
-	    sicstus_is_readable_stream/1, % +Stream
 	    read_line/1,		% -Codes
 	    read_line/2,		% +Stream, -Codes
 
@@ -58,13 +56,9 @@
 %	    call_residue/2,		% :Goal, -Residue
 
 	    prolog_flag/3,		% +Flag, -Old, +New
+	    prolog_flag/2,		% +Flag, -Value
 
-	    statistics/2,		% ?Key, ?Value
-
-	    op(1150, fx, (block)),
-	    op(1150, fx, (mode)),
-	    op(900, fy, (spy)),
-	    op(900, fy, (nospy))
+	    op(1150, fx, (block))
 	  ]).
 
 :- use_module(sicstus/block).
@@ -75,29 +69,19 @@
 :- use_module(library(arithmetic)).
 
 
-/** <module> SICStus 3 compatibility library
+/** <module> SICStus compatibility library
 
 This library is intended to be activated   using  the directive below in
-files that are designed for use with   SICStus Prolog 3. The changes are
-in effect until the end of the file   and  in each file loaded from this
-file.
+files that are designed for use with  SICStus Prolog. The changes are in
+effect until the end of the file and in each file loaded from this file.
 
     ==
     :- expects_dialect(sicstus).
     ==
 
-This library only provides  compatibility  with   version  3  of SICStus
-Prolog.     For     SICStus     Prolog      4     compatibility,     use
-library(dialect/sicstus4) instead.
-
 @tbd	The dialect-compatibility packages are developed in a
 	`demand-driven' fashion.  Please contribute to this package.
 */
-
-% SICStus built-in operators that SWI doesn't declare by default.
-:- op(1150, fx, user:(mode)).
-:- op(900, fy, user:(spy)).
-:- op(900, fy, user:(nospy)).
 
 :- multifile
 	system:goal_expansion/2.
@@ -129,53 +113,26 @@ push_sicstus_library :-
 :- push_sicstus_library.
 
 
-in_sicstus_dialect :-
-	(   prolog_load_context(dialect, sicstus)
-	->  true
-	;   prolog_load_context(dialect, sicstus4)
-	).
-
-
 		 /*******************************
 		 *	      OPERATORS		*
 		 *******************************/
 
 %	declare all operators globally
 
-user:goal_expansion(op(Pri,Ass,Name),
-		    op(Pri,Ass,user:Name)) :-
+system:goal_expansion(op(Pri,Ass,Name),
+		      op(Pri,Ass,user:Name)) :-
 	\+ qualified(Name),
-	in_sicstus_dialect.
+	prolog_load_context(dialect, sicstus).
 
 qualified(Var) :- var(Var), !, fail.
 qualified(_:_).
 
-% Import all operators from a module, even when using an explicit list
-% of imports. This simulates the SICStus behavior, where operators are
-% not module-sensitive and don't need to be listed in import lists.
-
-user:goal_expansion(use_module(Module,Imports),
-		    use_module(Module,[op(_,_,_)|Imports])) :-
-	in_sicstus_dialect,
-	% Prevent infinite recursion.
-	\+ memberchk(op(_,_,_),Imports).
 
 %%	setup_dialect
 %
 %	Further dialect initialization.
-%
-%	Currently this disables quoting when printing atoms,
-%	which SWI does by default, but SICStus doesn't.
-%	This globally modifies the print_write_options Prolog flag,
-%	so this change also affects code that doesn't request
-%	SICStus compatibility.
 
-setup_dialect :-
-	current_prolog_flag(print_write_options, Options),
-	(   selectchk(quoted(true), Options, OptionsNoQuoted)
-	->  set_prolog_flag(print_write_options, OptionsNoQuoted)
-	;   true
-	).
+setup_dialect.
 
 
 		 /*******************************
@@ -187,7 +144,7 @@ setup_dialect :-
 
 system:goal_expansion(if(If,Then,Else),
 		      (If *-> Then ; Else)) :-
-	in_sicstus_dialect,
+	prolog_load_context(dialect, sicstus),
 	\+ (sub_term(X, [If,Then,Else]), X == !).
 
 %%	if(:If, :Then, :Else)
@@ -283,7 +240,7 @@ system:term_expansion(
 	   [ (:- module(Name, Exports))
 	   | Declarations
 	   ]) :-
-	(prolog_load_context(dialect, sicstus) ; prolog_load_context(dialect, sicstus4)),
+	prolog_load_context(dialect, sicstus),
 	phrase(sicstus_module_decls(Options), Declarations).
 
 sicstus_module_decls([]) --> [].
@@ -361,16 +318,6 @@ bb_update(Key, Old, New) :-
 		 *	     MUTABLES		*
 		 *******************************/
 
-%%	is_mutable(@Term) is det.
-%
-%	True if Term is bound to a mutable term.
-%
-%	@compat sicstus
-
-is_mutable(Term) :-
-	nonvar(Term),
-	functor(Term, '$mutable', 2).
-
 %%	create_mutable(?Value, -Mutable) is det.
 %
 %	Create a mutable term with the given initial Value.
@@ -422,20 +369,6 @@ read_line(Codes) :-
 read_line(Stream, Codes) :-
     read_line_to_codes(Stream, Codes).
 
-% Emulate the SICStus behavior of at_end_of_stream, which silently fails
-% instead of blocking if reading from the stream would block.
-% Also fails silently if Stream is not actually a valid stream.
-
-sicstus_is_readable_stream(Stream) :-
-	is_stream(Stream),
-	stream_property(Stream, end_of_stream(not)).
-
-user:goal_expansion(at_end_of_stream(Stream), \+ sicstus_is_readable_stream(Stream)) :-
-	in_sicstus_dialect.
-
-user:goal_expansion(at_end_of_stream, \+ sicstus_is_readable_stream(current_input)) :-
-	in_sicstus_dialect.
-
 
 		 /*******************************
 		 *  COROUTINING & CONSTRAINTS	*
@@ -471,22 +404,18 @@ vars_by_goal(Goal) -->
 	[ VarSet-Goal ].
 */
 
-%%	trimcore is det.
+%%	trimcore
 %
-%	Trims the stacks and releases unused heap memory to the
-%	operating system where possible. Other tasks of the SICStus
-%	trimcore/0 are automatically scheduled by SWI-Prolog.
+%	Trims the stacks.  Other tasks of the SICStus trimcore/0 are
+%	automatically scheduled by SWI-Prolog.
 
 trimcore :-
-	trim_stacks,
-	trim_heap.
+	trim_stacks.
 
 
 		 /*******************************
 		 *	       FLAGS		*
 		 *******************************/
-
-:- use_module(library(quintus), [prolog_flag/2 as quintus_flag]).
 
 %%	prolog_flag(+Flag, -Old, +New) is semidet.
 %
@@ -495,61 +424,24 @@ trimcore :-
 
 prolog_flag(Flag, Old, New) :-
 	debug(prolog_flag, 'prolog_flag(~q, ~q, ~q)', [Flag, Old, New]),
-	sicstus_flag(Flag, Old),
+	current_prolog_flag(Flag, Old),
 	set_prolog_flag(Flag, New).
 
-:- public sicstus_flag/2.
+%%	prolog_flag(+Flag, -Value) is semidet.
+%
+%	Query a Prolog flag, mapping SICSTus flags to SWI-Prolog flags
 
-sicstus_flag(host_type, HostType) :- !,
-	% Not a perfect emulation. SWI's arch flag only contains the
-	% architecture and OS family (e. g. 'x86_64-darwin'),
-	% but SICStus host_type also contains the OS version number
-	% (e. g. 'x86_64-darwin-15.6.0').
-	% But this works well enough for code that just checks the
-	% architecture/OS part and not the exact version.
-	current_prolog_flag(arch, HostType).
+prolog_flag(Flag, Value) :-
+	debug(prolog_flag, 'prolog_flag(~q, ~q)', [Flag, Value]),
+	sicstus_flag(Flag, Value).
+
 sicstus_flag(system_type, Type) :- !,
 	(   current_prolog_flag(saved_program, true)
 	->  Type = runtime
 	;   Type = development
 	).
 sicstus_flag(Name, Value) :-
-	quintus_flag(Name, Value).
-
-% Replace all current_prolog_flag/2 and prolog_flag/2 calls with
-% sicstus_flag/2. prolog_flag/2 can also be autoloaded from
-% library(quintus) - this goal expansion ensures that sicstus_flag/2
-% takes priority when SICStus emulation is active.
-
-user:goal_expansion(Goal, sicstus:sicstus_flag(Name, Value)) :-
-	nonvar(Goal),
-	(Goal = current_prolog_flag(Name, Value) ; Goal = prolog_flag(Name, Value)),
-	in_sicstus_dialect.
-
-
-% As of SICStus 3.2.11, the following statistics/2 keys are still missing:
-% * choice
-
-statistics(heap, Stats) :- !, system:statistics(program, Stats).
-statistics(garbage_collection, [Count, Freed, Time]) :- !,
-	% Remove fourth list element (SWI extension).
-	system:statistics(garbage_collection, [Count, Freed, Time|_]).
-statistics(atoms, [H|T]) :- !,
-	% SWI natively provides two different values under the atoms key:
-	% the number of atoms as a single integer,
-	% and a Quintus/SICStus-compatible list of atom usage statistics.
-	% Which value is returned when calling statistics(atoms, X)
-	% depends on the value of X before the call:
-	% if X is unbound, the single integer is returned,
-	% but if X is already bound to a (usually non-ground) list,
-	% the list of statistics is returned instead.
-
-	% Here we just force the list to be returned in all cases
-	% if SICStus emulation is active, by forcing the second argument
-	% to be bound to a list.
-	system:statistics(atoms, [H|T]).
-
-statistics(Keyword, Value) :- system:statistics(Keyword, Value).
+	current_prolog_flag(Name, Value).
 
 
 		 /*******************************
@@ -561,11 +453,14 @@ statistics(Keyword, Value) :- system:statistics(Keyword, Value).
 % could also consider adding # internally, but not turning it into an
 % operator.
 
-:- op(500, yfx, user:(#)).
+:- op(500, yfx, #).
 
 :- arithmetic_function(user:(#)/2).
+:- arithmetic_function(user:(\)/2).
 
-user:(#(X,Y,R)) :-
+user:(#(X,Y,R)) :-				% SICStus 3
+	R is xor(X,Y).
+user:(\(X,Y,R)) :-				% SICStus 4
 	R is xor(X,Y).
 
 

@@ -36,7 +36,6 @@
 :- module(pengines_io,
           [ pengine_writeln/1,          % +Term
             pengine_nl/0,
-            pengine_tab/1,
             pengine_flush_output/0,
             pengine_format/1,           % +Format
             pengine_format/2,           % +Format, +Args
@@ -160,21 +159,6 @@ pengine_nl :-
     send_html(br([])).
 pengine_nl :-
     nl.
-
-%!  pengine_tab(+N)
-%
-%   Emit N spaces
-
-pengine_tab(Expr) :-
-    pengine_output,
-    !,
-    N is Expr,
-    length(List, N),
-    maplist(=(&(nbsp)), List),
-    send_html(List).
-pengine_tab(N) :-
-    tab(N).
-
 
 %!  pengine_flush_output
 %
@@ -327,26 +311,9 @@ message_lines([ansi(Attributes, Fmt, Args)|T]) -->
     },
     html(HTML),
     message_lines(T).
-message_lines([url(Pos)|T]) -->
-    !,
-    location(Pos),
-    message_lines(T).
-message_lines([url(HREF, Label)|T]) -->
-    !,
-    html(a(href(HREF),Label)),
-    message_lines(T).
 message_lines([H|T]) -->
     html(H),
     message_lines(T).
-
-location(File:Line:Column) -->
-    !,
-    html([File, :, Line, :, Column]).
-location(File:Line) -->
-    !,
-    html([File, :, Line]).
-location(File) -->
-    html([File]).
 
 style(bold, Content, b(Content)) :- !.
 style(fg(default), Content, span(style('color: black'), Content)) :- !.
@@ -602,12 +569,11 @@ binding_residual('Residual'  = '$residual'(Residual),   'Residual', [Residual]) 
 binding_residual_clauses(
     '_wfs_residual_program' = '$wfs_residual_program'(Delays, Clauses),
     '_wfs_residual_program', Residuals, Clauses) :-
-    phrase(delay_list(Delays), Residuals).
+    phrase(comma_list(Delays), Residuals).
 
-delay_list(true) --> !.
-delay_list((A,B)) --> !, delay_list(A), delay_list(B).
-delay_list(M:A) --> !, [M:'$wfs_undefined'(A)].
-delay_list(A) --> ['$wfs_undefined'(A)].
+comma_list(true) --> !.
+comma_list((A,B)) --> !, comma_list(A), comma_list(B).
+comma_list(A) --> [A].
 
 add_projection(-, _, JSON, JSON) :- !.
 add_projection(VarNames0, ResVars0, JSON0, JSON) :-
@@ -676,12 +642,6 @@ term_html(Term, Vars, WriteOptions) -->
     { nonvar(Term) },
     binding_term(Term, Vars, WriteOptions),
     !.
-term_html(Undef, _Vars, WriteOptions) -->
-    { nonvar(Undef),
-      Undef = '$wfs_undefined'(Term),
-      !
-    },
-    html(span(class(wfs_undefined), \term(Term, WriteOptions))).
 term_html(Term, _Vars, WriteOptions) -->
     term(Term, WriteOptions).
 
@@ -744,7 +704,6 @@ prolog_help:show_html_hook(HTML) :-
 
 sandbox:safe_primitive(pengines_io:pengine_listing(_)).
 sandbox:safe_primitive(pengines_io:pengine_nl).
-sandbox:safe_primitive(pengines_io:pengine_tab(_)).
 sandbox:safe_primitive(pengines_io:pengine_flush_output).
 sandbox:safe_primitive(pengines_io:pengine_print(_)).
 sandbox:safe_primitive(pengines_io:pengine_write(_)).
@@ -775,7 +734,6 @@ sandbox:safe_meta(pengines_io:pengine_format(Format, Args), Calls) :-
 
 pengine_io_predicate(writeln(_)).
 pengine_io_predicate(nl).
-pengine_io_predicate(tab(_)).
 pengine_io_predicate(flush_output).
 pengine_io_predicate(format(_)).
 pengine_io_predicate(format(_,_)).

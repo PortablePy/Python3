@@ -50,7 +50,7 @@
 %      "Programming Finite-Domain Constraint Propagators in Action Rules"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-This library uses the following attribute value:
+This library uses the following arribute value:
 
 	dom_neq(Domain, Left, Right)
 

@@ -3,10 +3,9 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  1997-2021, University of Amsterdam
+    Copyright (c)  1997-2020, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -48,33 +47,11 @@
     prolog:deprecated//1,	    % Deprecated features
     prolog:message_location//1,     % (File) location of error messages
     prolog:message_line_element/2.  % Extend printing
-:- '$hide'((
-    prolog:message//1,
-    prolog:error_message//1,
-    prolog:message_context//1,
-    prolog:deprecated//1,
-    prolog:message_location//1,
-    prolog:message_line_element/2)).
-% Lang, Term versions
-:- multifile
-    prolog:message//2,              % entire message
-    prolog:error_message//2,        % 1-st argument of error term
-    prolog:message_context//2,      % Context of error messages
-    prolog:message_location//2,	    % (File) location of error messages
-    prolog:deprecated//2.	    % Deprecated features
-:- '$hide'((
-    prolog:message//2,
-    prolog:error_message//2,
-    prolog:message_context//2,
-    prolog:deprecated//2,
-    prolog:message_location//2)).
-
 :- discontiguous
     prolog_message/3.
 
 :- public
-    translate_message//1,           % +Message (deprecated)
-    prolog:translate_message//1.    % +Message
+    translate_message//1.
 
 :- create_prolog_flag(message_context, [thread], []).
 
@@ -83,50 +60,33 @@
 %   Translate a message Term into message lines. The produced lines
 %   is a list of
 %
-%       - nl
-%         Emit a newline
-%       - Fmt-Args
-%         Emit the result of format(Fmt, Args)
-%       - Fmt
-%         Emit the result of format(Fmt)
-%       - ansi(Code, Fmt, Args)
-%         Use ansi_format/3 for color output.
-%       - flush
-%         Used only as last element of the list.   Simply flush the
-%         output instead of producing a final newline.
-%       - at_same_line
-%         Start the messages at the same line (instead of using ~N)
-%
-%   @deprecated  Use  code  for   message    translation   should   call
-%   prolog:translate_message//1.
-
-prolog:translate_message(Term) -->
-    translate_message(Term).
-
-%!  translate_message(+Term)// is det.
-%
-%   Translate a message term into  message   lines.  This version may be
-%   called from user and library definitions for message translation.
+%       * nl
+%       Emit a newline
+%       * Fmt-Args
+%       Emit the result of format(Fmt, Args)
+%       * Fmt
+%       Emit the result of format(Fmt)
+%       * flush
+%       Used only as last element of the list.   Simply flush the
+%       output instead of producing a final newline.
+%       * at_same_line
+%       Start the messages at the same line (instead of using ~N)
 
 translate_message(Term) -->
-    { nonvar(Term) },
-    (   { message_lang(Lang) },
-        prolog:message(Lang, Term)
-    ;   prolog:message(Term)
-    ),
-    !.
-translate_message(Term) -->
-    { nonvar(Term) },
     translate_message2(Term),
     !.
 translate_message(Term) -->
-    { nonvar(Term),
-      Term = error(_, _)
-    },
+    { Term = error(_, _) },
     [ 'Unknown exception: ~p'-[Term] ].
 translate_message(Term) -->
     [ 'Unknown message: ~p'-[Term] ].
 
+translate_message2(Term) -->
+    {var(Term)},
+    !,
+    [ 'Unknown message: ~p'-[Term] ].
+translate_message2(Term) -->
+    prolog:message(Term).
 translate_message2(Term) -->
     prolog_message(Term).
 translate_message2(error(resource_error(stack), Context)) -->
@@ -154,24 +114,12 @@ make_message_lines([Last],  ['~w'-[Last]|T], T) :- !.
 make_message_lines([L0|LT], ['~w'-[L0],nl|T0], T) :-
     make_message_lines(LT, T0, T).
 
-%!  term_message(+Term)//
-%
-%   Deal  with  the  formal  argument    of  error(Format,  ImplDefined)
-%   exception  terms.  The  `ImplDefined`   argument    is   handled  by
-%   swi_location//2.
-
-:- public term_message//1.
 term_message(Term) -->
     {var(Term)},
     !,
     [ 'Unknown error term: ~p'-[Term] ].
 term_message(Term) -->
-    { message_lang(Lang) },
-    prolog:error_message(Lang, Term),
-    !.
-term_message(Term) -->
-    prolog:error_message(Term),
-    !.
+    prolog:error_message(Term).
 term_message(Term) -->
     iso_message(Term).
 term_message(Term) -->
@@ -179,8 +127,6 @@ term_message(Term) -->
 term_message(Term) -->
     [ 'Unknown error term: ~p'-[Term] ].
 
-iso_message(resource_error(c_stack)) -->
-    out_of_c_stack.
 iso_message(resource_error(Missing)) -->
     [ 'Not enough resources: ~w'-[Missing] ].
 iso_message(type_error(evaluable, Actual)) -->
@@ -210,8 +156,6 @@ iso_message(existence_error(procedure, Proc)) -->
     unknown_proc_msg(Proc).
 iso_message(existence_error(answer_variable, Var)) -->
     [ '$~w was not bound by a previous query'-[Var] ].
-iso_message(existence_error(matching_rule, Goal)) -->
-    [ 'No rule matches ~p'-[Goal] ].
 iso_message(existence_error(Type, Object)) -->
     [ '~w `~p'' does not exist'-[Type, Object] ].
 iso_message(existence_error(Type, Object, In)) --> % not ISO
@@ -262,12 +206,6 @@ permission_error(open, source_sink, alias(Alias)) -->
     [ 'No permission to reuse alias "~p": already taken'-[Alias] ].
 permission_error(tnot, non_tabled_procedure, Pred) -->
     [ 'The argument of tnot/1 is not tabled: ~p'-[Pred] ].
-permission_error(assert, procedure, Pred) -->
-    { '$pi_head'(Pred, Head),
-      predicate_property(Head, ssu)
-    },
-    [ '~p: an SSU (Head => Body) predicate cannot have normal Prolog clauses'-
-      [Pred] ].
 permission_error(Action, Type, Object) -->
     [ 'No permission to ~w ~w `~p'''-[Action, Type, Object] ].
 
@@ -279,10 +217,6 @@ unknown_proc_msg((^)/2) -->
     !,
     [nl, '  ^/2 can only appear as the 2nd argument of setof/3 and bagof/3'].
 unknown_proc_msg((:-)/2) -->
-    !,
-    [nl, '  Rules must be loaded from a file'],
-    faq('ToplevelMode').
-unknown_proc_msg((=>)/2) -->
     !,
     [nl, '  Rules must be loaded from a file'],
     faq('ToplevelMode').
@@ -301,16 +235,6 @@ unknown_proc_msg(Proc) -->
         dwim_message(Dwims)
     ;   []
     ).
-
-dependency_error(shared(Shared), private(Private)) -->
-    [ 'Shared table for ~p may not depend on private ~p'-[Shared, Private] ].
-dependency_error(Dep, monotonic(On)) -->
-    { '$pi_head'(PI, Dep),
-      '$pi_head'(MPI, On)
-    },
-    [ 'Dependent ~p on monotonic predicate ~p is not monotonic or incremental'-
-      [PI, MPI]
-    ].
 
 faq(Page) -->
     [nl, '  See FAQ at https://www.swi-prolog.org/FAQ/', Page, '.txt' ].
@@ -446,8 +370,8 @@ swi_message(thread_error(TID, false)) -->
 swi_message(thread_error(TID, exception(Error))) -->
     [ 'Thread ~p died abnormally:'-[TID], nl ],
     translate_message(Error).
-swi_message(dependency_error(Tabled, DependsOn)) -->
-    dependency_error(Tabled, DependsOn).
+swi_message(idg_dependency_error(Shared, Private)) -->
+    [ 'Shared table for ~p may not depend on private ~p'-[Shared, Private] ].
 swi_message(shell(execute, Cmd)) -->
     [ 'Could not execute `~w'''-[Cmd] ].
 swi_message(shell(signal(Sig), Cmd)) -->
@@ -491,70 +415,44 @@ swi_message(format_argument_type(Fmt, Arg)) -->
     [ 'Illegal argument to format sequence ~~~w: ~p'-[Fmt, Arg] ].
 swi_message(format(Msg)) -->
     [ 'Format error: ~w'-[Msg] ].
-swi_message(conditional_compilation_error(unterminated, File:Line)) -->
-    [ 'Unterminated conditional compilation from '-[], url(File:Line) ].
+swi_message(conditional_compilation_error(unterminated, Where)) -->
+    [ 'Unterminated conditional compilation from '-[] ],
+    cond_location(Where).
 swi_message(conditional_compilation_error(no_if, What)) -->
     [ ':- ~w without :- if'-[What] ].
 swi_message(duplicate_key(Key)) -->
     [ 'Duplicate key: ~p'-[Key] ].
 swi_message(initialization_error(failed, Goal, File:Line)) -->
     !,
-    [ url(File:Line), ': ~p: false'-[Goal] ].
+    [ '~w:~w: ~p: false'-[File, Line, Goal] ].
 swi_message(initialization_error(Error, Goal, File:Line)) -->
-    [ url(File:Line), ': ~p '-[Goal] ],
+    [ '~w:~w: ~p '-[File, Line, Goal] ],
     translate_message(Error).
-swi_message(determinism_error(PI, det, Found, property)) -->
-    (   { '$pi_head'(user:PI, Head),
-          predicate_property(Head, det)
-        }
-    ->  [ 'Deterministic procedure ~p'-[PI] ]
-    ;   [ 'Procedure ~p called from a deterministic procedure'-[PI] ]
-    ),
-    det_error(Found).
-swi_message(determinism_error(PI, det, fail, guard)) -->
-    [ 'Procedure ~p failed after $-guard'-[PI] ].
-swi_message(determinism_error(PI, det, fail, guard_in_caller)) -->
-    [ 'Procedure ~p failed after $-guard in caller'-[PI] ].
-swi_message(determinism_error(Goal, det, fail, goal)) -->
-    [ 'Goal ~p failed'-[Goal] ].
-swi_message(determinism_error(Goal, det, nondet, goal)) -->
-    [ 'Goal ~p succeeded with a choice point'-[Goal] ].
 swi_message(qlf_format_error(File, Message)) -->
     [ '~w: Invalid QLF file: ~w'-[File, Message] ].
-swi_message(goal_expansion_error(bound, Term)) -->
-    [ 'Goal expansion bound a variable to ~p'-[Term] ].
 
-det_error(nondet) -->
-    [ ' succeeded with a choicepoint'- [] ].
-det_error(fail) -->
-    [ ' failed'- [] ].
+cond_location(File:Line) -->
+    { file_base_name(File, Base) },
+    [ '~w:~d'-[Base, Line] ].
 
-
-%!  swi_location(+Term)// is det.
-%
-%   Print location information for error(Formal,   ImplDefined) from the
-%   ImplDefined term.
-
-:- public swi_location//1.
 swi_location(X) -->
-    { var(X) },
-    !.
-swi_location(Context) -->
-    { message_lang(Lang) },
-    prolog:message_location(Lang, Context),
-    !.
+    { var(X)
+    },
+    !,
+    [].
 swi_location(Context) -->
     prolog:message_location(Context),
     !.
 swi_location(context(Caller, _Msg)) -->
-    { ground(Caller) },
+    { ground(Caller)
+    },
     !,
     caller(Caller).
 swi_location(file(Path, Line, -1, _CharNo)) -->
     !,
-    [ url(Path:Line), ': ' ].
+    [ '~w:~d: '-[Path, Line] ].
 swi_location(file(Path, Line, LinePos, _CharNo)) -->
-    [ url(Path:Line:LinePos), ': ' ].
+    [ '~w:~d:~d: '-[Path, Line, LinePos] ].
 swi_location(stream(Stream, Line, LinePos, CharNo)) -->
     (   { is_stream(Stream),
           stream_property(Stream, file_name(File))
@@ -563,7 +461,7 @@ swi_location(stream(Stream, Line, LinePos, CharNo)) -->
     ;   [ 'Stream ~w:~d:~d '-[Stream, Line, LinePos] ]
     ).
 swi_location(autoload(File:Line)) -->
-    [ url(File:Line), ': ' ].
+    [ '~w:~w: '-[File, Line] ].
 swi_location(_) -->
     [].
 
@@ -582,22 +480,11 @@ caller(Caller) -->
     [ '~p: '-[Caller] ].
 
 
-%!  swi_extra(+Term)// is det.
-%
-%   Extract information from the  second   argument  of an error(Formal,
-%   ImplDefined) that is printed _after_ the core of the message.
-%
-%   @see swi_location//1 uses the same term   to insert context _before_
-%   the core of the message.
-
 swi_extra(X) -->
-    { var(X) },
+    { var(X)
+    },
     !,
     [].
-swi_extra(Context) -->
-    { message_lang(Lang) },
-    prolog:message_context(Lang, Context),
-    !.
 swi_extra(Context) -->
     prolog:message_context(Context).
 swi_extra(context(_, Msg)) -->
@@ -638,50 +525,10 @@ thread_context -->
                  *        NORMAL MESSAGES       *
                  *******************************/
 
-prolog_message(welcome) -->
-    [ 'Welcome to SWI-Prolog (' ],
-    prolog_message(threads),
-    prolog_message(address_bits),
-    ['version ' ],
-    prolog_message(version),
-    [ ')', nl ],
-    prolog_message(copyright),
-    [ nl ],
-    translate_message(user_versions),
-    [ nl ],
-    prolog_message(documentaton),
-    [ nl, nl ].
-prolog_message(user_versions) -->
-    (   { findall(Msg, prolog:version_msg(Msg), Msgs),
-          Msgs \== []
-        }
-    ->  [nl],
-        user_version_messages(Msgs)
-    ;   []
-    ).
-prolog_message(deprecated(Term)) -->
-    { nonvar(Term) },
-    (   { message_lang(Lang) },
-        prolog:deprecated(Lang, Term)
-    ->  []
-    ;   prolog:deprecated(Term)
-    ->  []
-    ;   deprecated(Term)
-    ).
-prolog_message(unhandled_exception(E)) -->
-    { nonvar(E) },
-    [ 'Unhandled exception: ' ],
-    (   translate_message(E)
-    ->  []
-    ;   [ '~p'-[E] ]
-    ).
-
-%!  prolog_message(+Term)//
-
 prolog_message(initialization_error(_, E, File:Line)) -->
     !,
-    [ url(File:Line),
-      ': Initialization goal raised exception:', nl
+    [ '~w:~d: '-[File, Line],
+      'Initialization goal raised exception:', nl
     ],
     translate_message(E).
 prolog_message(initialization_error(Goal, E, _)) -->
@@ -689,8 +536,8 @@ prolog_message(initialization_error(Goal, E, _)) -->
     translate_message(E).
 prolog_message(initialization_failure(_Goal, File:Line)) -->
     !,
-    [ url(File:Line),
-      ': Initialization goal failed'-[]
+    [ '~w:~d: '-[File, Line],
+      'Initialization goal failed'-[]
     ].
 prolog_message(initialization_failure(Goal, _)) -->
     [ 'Initialization goal failed: ~p'-[Goal]
@@ -704,10 +551,10 @@ prolog_message(init_goal_syntax(Error, Text)) -->
     translate_message(Error).
 prolog_message(init_goal_failed(failed, @(Goal,File:Line))) -->
     !,
-    [ url(File:Line), ': ~p: false'-[Goal] ].
+    [ '~w:~w: ~p: false'-[File, Line, Goal] ].
 prolog_message(init_goal_failed(Error, @(Goal,File:Line))) -->
     !,
-    [ url(File:Line), ': ~p '-[Goal] ],
+    [ '~w:~w: ~p '-[File, Line, Goal] ],
     translate_message(Error).
 prolog_message(init_goal_failed(failed, Text)) -->
     !,
@@ -716,6 +563,12 @@ prolog_message(init_goal_failed(Error, Text)) -->
     !,
     [ '-g ~w: '-[Text] ],
     translate_message(Error).
+prolog_message(unhandled_exception(E)) -->
+    [ 'Unhandled exception: ' ],
+    (   translate_message2(E)
+    ->  []
+    ;   [ '~p'-[E] ]
+    ).
 prolog_message(goal_failed(Context, Goal)) -->
     [ 'Goal (~w) failed: ~p'-[Context, Goal] ].
 prolog_message(no_current_module(Module)) -->
@@ -759,6 +612,8 @@ prolog_message(unknown_in_module_user) -->
       'Please use :- dynamic or limit usage of unknown to a module.', nl,
       'See https://www.swi-prolog.org/howto/database.html'
     ].
+prolog_message(deprecated(What)) -->
+    deprecated(What).
 prolog_message(untable(PI)) -->
     [ 'Reconsult: removed tabling for ~p'-[PI] ].
 
@@ -877,7 +732,7 @@ defined_definition(Message, Spec) -->
       predicate_property(M:Head, line_count(Line))
     },
     !,
-    [ nl, '~w at '-[Message], url(File:Line) ].
+    [ nl, '~w at ~w:~d'-[Message, File,Line] ].
 defined_definition(_, _) --> [].
 
 used_search([]) -->
@@ -926,7 +781,7 @@ current_definition(Proc, Prefix) -->
       predicate_property(Head, file(File)),
       predicate_property(Head, line_count(Line))
     },
-    [ '~w'-[Prefix], url(File:Line), nl ].
+    [ '~w~w:~d'-[Prefix,File,Line], nl ].
 current_definition(_, _) --> [].
 
 pi_uhead(Module:Name/Arity, Module:Head) :-
@@ -1085,29 +940,6 @@ resolve_overflow(enlarge) -->
       '?- set_prolog_flag(stack_limit, ~I). to double the limit.'-[NewLimit]
     ].
 
-%!  out_of_c_stack
-%
-%   The thread's C-stack limit was exceeded. Give  some advice on how to
-%   resolve this.
-
-out_of_c_stack -->
-    { statistics(c_stack, Limit), Limit > 0 },
-    !,
-    [ 'C-stack limit (~D bytes) exceeded.'-[Limit], nl ],
-    resolve_c_stack_overflow(Limit).
-out_of_c_stack -->
-    { statistics(c_stack, Limit), Limit > 0 },
-    [ 'C-stack limit exceeded.'-[Limit], nl ],
-    resolve_c_stack_overflow(Limit).
-
-resolve_c_stack_overflow(_Limit) -->
-    { thread_self(main) },
-    [ 'Use the shell command ' ], code('~w', 'ulimit -s size'),
-    [ ' to enlarge the limit.' ].
-resolve_c_stack_overflow(_Limit) -->
-    [ 'Use the ' ], code('~w', 'c_stack(KBytes)'),
-    [ ' option of '], code(thread_create/3), [' to enlarge the limit.' ].
-
 
                  /*******************************
                  *        MAKE/AUTOLOAD         *
@@ -1129,13 +961,14 @@ prolog_message(autoload(read_index(Dir))) -->
 prolog_message(autoload(disabled(Loaded))) -->
     [ 'Disabled autoloading (loaded ~D files)'-[Loaded] ].
 prolog_message(autoload(already_defined(PI, From))) -->
-    code(PI),
+    [ ansi(code, '~p', [PI]) ],
     (   { '$pi_head'(PI, Head),
           predicate_property(Head, built_in)
         }
     ->  [' is a built-in predicate']
-    ;   [ ' is already imported from module ' ],
-        code(From)
+    ;   [ ' is already imported from module ',
+          ansi(code, '~p', [From])
+        ]
     ).
 
 swi_message(autoload(Msg)) -->
@@ -1258,10 +1091,31 @@ prolog_message(copyright) -->
     [ 'SWI-Prolog comes with ABSOLUTELY NO WARRANTY. This is free software.', nl,
       'Please run ?- license. for legal details.'
     ].
+prolog_message(user_versions) -->
+    (   { findall(Msg, prolog:version_msg(Msg), Msgs),
+          Msgs \== []
+        }
+    ->  [nl],
+        user_version_messages(Msgs)
+    ;   []
+    ).
 prolog_message(documentaton) -->
     [ 'For online help and background, visit https://www.swi-prolog.org', nl,
       'For built-in help, use ?- help(Topic). or ?- apropos(Word).'
     ].
+prolog_message(welcome) -->
+    [ 'Welcome to SWI-Prolog (' ],
+    prolog_message(threads),
+    prolog_message(address_bits),
+    ['version ' ],
+    prolog_message(version),
+    [ ')', nl ],
+    prolog_message(copyright),
+    [ nl ],
+    prolog_message(user_versions),
+    [ nl ],
+    prolog_message(documentaton),
+    [ nl, nl ].
 prolog_message(about) -->
     [ 'SWI-Prolog version (' ],
     prolog_message(threads),
@@ -1284,12 +1138,6 @@ prolog_message(close_on_abort(Stream)) -->
     [ 'Abort: closed stream ~p'-[Stream] ].
 prolog_message(cancel_halt(Reason)) -->
     [ 'Halt cancelled: ~p'-[Reason] ].
-prolog_message(on_error(halt(Status))) -->
-    { statistics(errors, Errors),
-      statistics(warnings, Warnings)
-    },
-    [ 'Halting with status ~w due to ~D errors and ~D warnings'-
-      [Status, Errors, Warnings] ].
 
 prolog_message(query(QueryResult)) -->
     query_result(QueryResult).
@@ -1313,11 +1161,11 @@ query_result(more(Bindings, Delays, Residuals)) -->
     result(Bindings, Delays, Residuals),
     prompt(more, Bindings, Delays, Residuals).
 query_result(help) -->
-    [ ansi(bold, '  Possible actions:', []), nl,
-      '  ; (n,r,space,TAB): redo              | t:         trace&redo'-[], nl,
-      '  *:                 show choicepoint  | c (a,RET): stop'-[], nl,
-      '  w:                 write             | p:         print'-[], nl,
-      '  b:                 break             | h (?):     help'-[],
+    [ nl, 'Actions:'-[], nl, nl,
+      '; (n, r, space, TAB): redo    t:          trace & redo'-[], nl,
+      'b:                    break   c (a, RET): exit'-[], nl,
+      'w:                    write   p           print'-[], nl,
+      'h (?):                help'-[],
       nl, nl
     ].
 query_result(action) -->
@@ -1529,11 +1377,6 @@ history_events([Nr/Event|T]) -->
     history_events(T).
 
 
-%!  user_version_messages(+Terms)//
-%
-%   Helper for the `welcome`  message   to  print information registered
-%   using version/1.
-
 user_version_messages([]) --> [].
 user_version_messages([H|T]) -->
     user_version_message(H),
@@ -1542,7 +1385,7 @@ user_version_messages([H|T]) -->
 %!  user_version_message(+Term)
 
 user_version_message(Term) -->
-    translate_message(Term), !, [nl].
+    translate_message2(Term), !, [nl].
 user_version_message(Atom) -->
     [ '~w'-[Atom], nl ].
 
@@ -1559,12 +1402,12 @@ prolog_message(nospy(Head)) -->
     { goal_to_predicate_indicator(Head, Pred)
     },
     [ 'Spy point removed from ~p'-[Pred] ].
-prolog_message(trace_mode(OnOff)) -->
-    [ 'Trace mode switched to ~w'-[OnOff] ].
-prolog_message(debug_mode(OnOff)) -->
-    [ 'Debug mode switched to ~w'-[OnOff] ].
-prolog_message(debugging(OnOff)) -->
-    [ 'Debug mode is ~w'-[OnOff] ].
+prolog_message(trace_mode(Bool)) -->
+    [ 'Trace mode switched to ~w'-[Bool] ].
+prolog_message(debug_mode(Bool)) -->
+    [ 'Debug mode switched to ~w'-[Bool] ].
+prolog_message(debugging(Bool)) -->
+    [ 'Debug mode is ~w'-[Bool] ].
 prolog_message(spying([])) -->
     !,
     [ 'No spy points' ].
@@ -1614,15 +1457,8 @@ prolog_message(frame(Frame, choice, PC)) -->
 prolog_message(frame(_, cut_call, _)) --> !, [].
 prolog_message(frame(Goal, trace(Port))) -->
     !,
-    thread_context,
     [ ' T ' ],
     port(Port),
-    goal(Goal).
-prolog_message(frame(Goal, trace(Port, Id))) -->
-    !,
-    thread_context,
-    [ ' T ' ],
-    port(Port, Id),
     goal(Goal).
 prolog_message(frame(Frame, Port, _PC)) -->
     frame_flags(Frame),
@@ -1678,11 +1514,6 @@ frame_flags(Frame) -->
     },
     [ '~w~w '-[T, S] ].
 
-% trace/1,2 context handling
-port(Port, _Id-Level) -->
-    [ '[~d] '-Level ],
-    port(Port).
-
 port(Port) -->
     { port_name(Port, Name)
     },
@@ -1737,7 +1568,7 @@ prolog_message(pack(attached(Pack, BaseDir))) -->
     [ 'Attached package ~w at ~q'-[Pack, BaseDir] ].
 prolog_message(pack(duplicate(Entry, OldDir, Dir))) -->
     [ 'Package ~w already attached at ~q.'-[Entry,OldDir], nl,
-      '\tIgnoring version from ~q'- [Dir]
+      '\tIgnoring version from ~q'- [Entry, OldDir, Dir]
     ].
 prolog_message(pack(no_arch(Entry, Arch))) -->
     [ 'Package ~w: no binary for architecture ~w'-[Entry, Arch] ].
@@ -1767,6 +1598,9 @@ prolog_message(backcomp(init_file_moved(FoundFile))) -->
 		 *          DEPRECATED		*
 		 *******************************/
 
+deprecated(Term) -->
+    prolog:deprecated(Term),
+    !.
 deprecated(set_prolog_stack(_Stack,limit)) -->
     [ 'set_prolog_stack/2: limit(Size) sets the combined limit.'-[], nl,
       'See https://www.swi-prolog.org/changes/stack-limit.html'
@@ -1781,7 +1615,7 @@ tripwire_message(Wire, Context) -->
     tripwire_context(Wire, Context).
 
 tripwire_context(_, ATrie) -->
-    { '$is_answer_trie'(ATrie, _),
+    { '$is_answer_trie'(ATrie),
       !,
       '$tabling':atrie_goal(ATrie, QGoal),
       user_predicate_indicator(QGoal, Goal)
@@ -1789,79 +1623,6 @@ tripwire_context(_, ATrie) -->
     [ '~p'-[Goal] ].
 tripwire_context(_, Ctx) -->
     [ '~p'-[Ctx] ].
-
-
-		 /*******************************
-		 *     INTERNATIONALIZATION	*
-		 *******************************/
-
-:- create_prolog_flag(message_language, default, []).
-
-%!  message_lang(-Lang) is multi.
-%
-%   True when Lang is a language id  preferred for messages. Starts with
-%   the most specific language (e.g., `nl_BE`) and ends with `en`.
-
-message_lang(Lang) :-
-    current_message_lang(Lang0),
-    (   Lang0 == en
-    ->  Lang = en
-    ;   sub_atom(Lang0, 0, _, _, en_)
-    ->  longest_id(Lang0, Lang)
-    ;   (   longest_id(Lang0, Lang)
-        ;   Lang = en
-        )
-    ).
-
-longest_id(Lang, Id) :-
-    split_string(Lang, "_-", "", [H|Components]),
-    longest_prefix(Components, Taken),
-    atomic_list_concat([H|Taken], '_', Id).
-
-longest_prefix([H|T0], [H|T]) :-
-    longest_prefix(T0, T).
-longest_prefix(_, []).
-
-%!  current_message_lang(-Lang) is det.
-%
-%   Get the current language for messages.
-
-current_message_lang(Lang) :-
-    (   current_prolog_flag(message_language, Lang0),
-        Lang0 \== default
-    ->  Lang = Lang0
-    ;   os_user_lang(Lang0)
-    ->  clean_encoding(Lang0, Lang1),
-        set_prolog_flag(message_language, Lang1),
-        Lang = Lang1
-    ;   Lang = en
-    ).
-
-os_user_lang(Lang) :-
-    current_prolog_flag(windows, true),
-    win_get_user_preferred_ui_languages(name, [Lang|_]).
-os_user_lang(Lang) :-
-    catch(setlocale(messages, _, ''), _, fail),
-    setlocale(messages, Lang, Lang).
-os_user_lang(Lang) :-
-    getenv('LANG', Lang).
-
-
-clean_encoding(Lang0, Lang) :-
-    (   sub_atom(Lang0, A, _, _, '.')
-    ->  sub_atom(Lang0, 0, A, _, Lang)
-    ;   Lang = Lang0
-    ).
-
-		 /*******************************
-		 *          PRIMITIVES		*
-		 *******************************/
-
-code(Term) -->
-    code('~p', Term).
-
-code(Format, Term) -->
-    [ ansi(code, Format, [Term]) ].
 
 
 		 /*******************************
@@ -1906,44 +1667,40 @@ default_theme(message(Level),         Attrs) :-
     prolog:message_prefix_hook/2.
 :- thread_local
     user:thread_message_hook/3.
-:- '$hide'((push_msg/1,pop_msg/0)).
 
 %!  print_message(+Kind, +Term)
 %
 %   Print an error message using a term as generated by the exception
 %   system.
 
-print_message(Level, _Term) :-
-    msg_property(Level, stream(S)),
-    stream_property(S, error(true)),
-    !.
 print_message(Level, Term) :-
     setup_call_cleanup(
-        push_msg(Term, Stack),
-        ignore(print_message_guarded(Level, Term)),
-        pop_msg(Stack)),
+        push_msg(Term),
+        print_message_guarded(Level, Term),
+        pop_msg),
     !.
 print_message(Level, Term) :-
     (   Level \== silent
-    ->  format(user_error, 'Recursive ~w message: ~q~n', [Level, Term]),
-        backtrace(20)
+    ->  format(user_error, 'Recursive ~w message: ~q~n', [Level, Term])
     ;   true
     ).
 
-push_msg(Term, Messages) :-
+push_msg(Term) :-
     nb_current('$inprint_message', Messages),
     !,
     \+ ( '$member'(Msg, Messages),
          Msg =@= Term
        ),
-    Stack = [Term|Messages],
-    b_setval('$inprint_message', Stack).
-push_msg(Term, []) :-
+    b_setval('$inprint_message', [Term|Messages]).
+push_msg(Term) :-
     b_setval('$inprint_message', [Term]).
 
-pop_msg(Stack) :-
-    nb_delete('$inprint_message'),              % delete history
-    b_setval('$inprint_message', Stack).
+pop_msg :-
+    (   nb_current('$inprint_message', [_|Messages]),
+        Messages \== []
+    ->  b_setval('$inprint_message', Messages)
+    ;   nb_delete('$inprint_message')
+    ).
 
 print_message_guarded(Level, Term) :-
     (   must_print(Level, Term)
@@ -1954,24 +1711,11 @@ print_message_guarded(Level, Term) :-
                 ;   notrace(user:message_hook(Term, Level, Lines))
                 )
             ->  true
-            ;   '$inc_message_count'(Level),
-                print_system_message(Term, Level, Lines),
-                maybe_halt_on_error(Level)
+            ;   print_system_message(Term, Level, Lines)
             )
         )
     ;   true
     ).
-
-maybe_halt_on_error(error) :-
-    current_prolog_flag(on_error, halt),
-    !,
-    halt(1).
-maybe_halt_on_error(warning) :-
-    current_prolog_flag(on_warning, halt),
-    !,
-    halt(1).
-maybe_halt_on_error(_).
-
 
 %!  print_system_message(+Term, +Kind, +Lines)
 %
@@ -1994,13 +1738,13 @@ print_system_message(Term, Kind, Lines) :-
     Term \= error(syntax_error(_), _),
     msg_property(Kind, location_prefix(File:Line, LocPrefix, LinePrefix)),
     !,
-    to_list(LocPrefix, LocPrefixL),
     insert_prefix(Lines, LinePrefix, Ctx, PrefixLines),
-    '$append'([ [begin(Kind, Ctx)],
-                LocPrefixL,
-                [nl],
-                PrefixLines,
-                [end(Ctx)]
+    '$append'([ begin(Kind, Ctx),
+                LocPrefix,
+                nl
+              | PrefixLines
+              ],
+              [ end(Ctx)
               ],
               AllLines),
     msg_property(Kind, stream(Stream)),
@@ -2016,17 +1760,11 @@ print_system_message(_, Kind, Lines) :-
     msg_property(Kind, stream(Stream)),
     print_message_lines(Stream, kind(Kind), Lines).
 
-to_list(ListIn, List) :-
-    is_list(ListIn),
-    !,
-    List = ListIn.
-to_list(NonList, [NonList]).
-
 :- multifile
     user:message_property/2.
 
 msg_property(Kind, Property) :-
-    notrace(user:message_property(Kind, Property)),
+    user:message_property(Kind, Property),
     !.
 msg_property(Kind, prefix(Prefix)) :-
     msg_prefix(Kind, Prefix),
@@ -2034,25 +1772,22 @@ msg_property(Kind, prefix(Prefix)) :-
 msg_property(_, prefix('~N')) :- !.
 msg_property(query, stream(user_output)) :- !.
 msg_property(_, stream(user_error)) :- !.
-msg_property(error, tag('ERROR')).
-msg_property(warning, tag('Warning')).
-msg_property(Level,
+msg_property(error,
              location_prefix(File:Line,
-                             ['~N~w: '-[Tag], url(File:Line), ':'],
-                             '~N~w:    '-[Tag])) :-
-    include_msg_location(Level),
-    msg_property(Level, tag(Tag)).
+                             '~NERROR: ~w:~d:'-[File,Line],
+                             '~NERROR:    ')) :- !.
+msg_property(warning,
+             location_prefix(File:Line,
+                             '~NWarning: ~w:~d:'-[File,Line],
+                             '~NWarning:    ')) :- !.
 msg_property(error,   wait(0.1)) :- !.
-
-include_msg_location(warning).
-include_msg_location(error).
 
 msg_prefix(debug(_), Prefix) :-
     msg_context('~N% ', Prefix).
-msg_prefix(Level, Prefix) :-
-    msg_property(Level, tag(Tag)),
-    atomics_to_string(['~N', Tag, ': '], Prefix0),
-    msg_context(Prefix0, Prefix).
+msg_prefix(warning, Prefix) :-
+    msg_context('~NWarning: ', Prefix).
+msg_prefix(error, Prefix) :-
+    msg_context('~NERROR: ', Prefix).
 msg_prefix(informational, '~N% ').
 msg_prefix(information,   '~N% ').
 
@@ -2184,28 +1919,10 @@ line_element(S, ansi(_, Fmt, Args)) :-
 line_element(S, ansi(_, Fmt, Args, _Ctx)) :-
     !,
     safe_format(S, Fmt, Args).
-line_element(S, url(URL)) :-
-    !,
-    print_link(S, URL).
-line_element(S, url(_URL, Fmt-Args)) :-
-    !,
-    safe_format(S, Fmt, Args).
-line_element(S, url(_URL, Fmt)) :-
-    !,
-    safe_format(S, Fmt, []).
 line_element(_, begin(_Level, _Ctx)) :- !.
 line_element(_, end(_Ctx)) :- !.
 line_element(S, Fmt) :-
     safe_format(S, Fmt, []).
-
-print_link(S, File:Line:Column) :-
-    !,
-    safe_format(S, '~w:~d:~d', [File, Line, Column]).
-print_link(S, File:Line) :-
-    !,
-    safe_format(S, '~w:~d', [File, Line]).
-print_link(S, File) :-
-    safe_format(S, '~w', [File]).
 
 %!  safe_format(+Stream, +Format, +Args) is det.
 
@@ -2215,7 +1932,7 @@ safe_format(S, Fmt, Args) :-
           format_failed(S,Fmt,Args,E)).
 
 format_failed(S, _Fmt, _Args, E) :-
-    stream_property(S, error(true)),
+    E = error(io_error(_,S),_),
     !,
     throw(E).
 format_failed(S, Fmt, Args, error(E,_)) :-
@@ -2251,14 +1968,6 @@ actions_to_format([ansi(_Attrs, Fmt0, Args0)|Tail], Fmt, Args) :-
     actions_to_format(Tail, Fmt1, Args1),
     atom_concat(Fmt0, Fmt1, Fmt),
     append_args(Args0, Args1, Args).
-actions_to_format([url(Pos)|Tail], Fmt, Args) :-
-    !,
-    actions_to_format(Tail, Fmt1, Args1),
-    url_actions_to_format(url(Pos), Fmt1, Args1, Fmt, Args).
-actions_to_format([url(URL, Label)|Tail], Fmt, Args) :-
-    !,
-    actions_to_format(Tail, Fmt1, Args1),
-    url_actions_to_format(url(URL, Label), Fmt1, Args1, Fmt, Args).
 actions_to_format([Fmt0-Args0|Tail], Fmt, Args) :-
     !,
     actions_to_format(Tail, Fmt1, Args1),
@@ -2283,33 +1992,14 @@ action_skip(flush).
 action_skip(begin(_Level, _Ctx)).
 action_skip(end(_Ctx)).
 
-url_actions_to_format(url(File:Line:Column), Fmt1, Args1, Fmt, Args) :-
-    !,
-    atom_concat('~w:~d:~d', Fmt1, Fmt),
-    append_args([File,Line,Column], Args1, Args).
-url_actions_to_format(url(File:Line), Fmt1, Args1, Fmt, Args) :-
-    !,
-    atom_concat('~w:~d', Fmt1, Fmt),
-    append_args([File,Line], Args1, Args).
-url_actions_to_format(url(File), Fmt1, Args1, Fmt, Args) :-
-    !,
-    atom_concat('~w', Fmt1, Fmt),
-    append_args([File], Args1, Args).
-url_actions_to_format(url(_URL, Label), Fmt1, Args1, Fmt, Args) :-
-    !,
-    atom_concat('~w', Fmt1, Fmt),
-    append_args([Label], Args1, Args).
-
-
 append_args(M:Args0, Args1, M:Args) :-
     !,
     strip_module(Args1, _, A1),
-    to_list(Args0, Args01),
-    '$append'(Args01, A1, Args).
+    '$append'(Args0, A1, Args).
 append_args(Args0, Args1, Args) :-
     strip_module(Args1, _, A1),
-    to_list(Args0, Args01),
-    '$append'(Args01, A1, Args).
+    '$append'(Args0, A1, Args).
+
 
                  /*******************************
                  *    MESSAGES TO PRINT ONCE    *

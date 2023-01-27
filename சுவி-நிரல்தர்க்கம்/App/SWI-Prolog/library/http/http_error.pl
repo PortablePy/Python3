@@ -3,9 +3,8 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2006-2023, University of Amsterdam
+    Copyright (c)  2006-2016, University of Amsterdam
                               VU University Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -37,7 +36,7 @@
 :- module(http_error,
           [
           ]).
-:- use_module(library(prolog_stack), []).
+:- use_module(library(prolog_stack)).
 :- use_module(library(settings)).
 :- use_module(library(broadcast)).
 :- use_module(library(debug)).
@@ -57,9 +56,6 @@ can be controlled by
     hackers on how to compromise your site. The more information you
     give them, the easier it is to break into your server!  See
     set_setting/2 and set_setting_default/2.
-  - assert(http_error:suppress_code(Code)) makes this library become
-    silent for replies with a matching HTTP status code.   This may be
-    used to suppress >400 replies that are "normal" in the application.
 */
 
 :- setting(http:client_backtrace, boolean, true,
@@ -76,8 +72,7 @@ can be controlled by
           http_listen(Message)).
 
 :- dynamic
-    saved_request/2,
-    suppress_code/1.
+    saved_request/2.
 
 http_listen(_) :-
     \+ debugging(http(error)),
@@ -89,7 +84,6 @@ http_listen(request_finished(Id, Code, Status, _CPU, _Bytes)) :-
     retract(saved_request(Id, Request)),
     !,
     Code >= 400,
-    \+ suppress_code(Code),
     memberchk(path(Path), Request),
     memberchk(method(Method), Request),
     upcase_atom(Method, UMethod),
@@ -101,10 +95,7 @@ reply_status(Status, Reply) :-
     map_exception(Status, Reply),
     !.
 reply_status(Status, Message) :-
-    Status = error(_,_),
-    !,
     message_to_string(Status, Message).
-reply_status(Status, Status).
 
 map_exception(http_reply(bytes(ContentType,Bytes),_), bytes(ContentType,L)) :-
     string_length(Bytes, L).        % also does lists

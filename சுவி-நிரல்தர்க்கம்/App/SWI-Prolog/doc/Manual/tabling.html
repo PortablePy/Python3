@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 9.0.4 Reference Manual</title><link rel="home" href="index.html">
+<title>SWI-Prolog 8.2.4 Reference Manual</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -238,7 +238,7 @@ execution (SLG resolution)</span></a></h1>
 
 <a id="sec:tabling"></a>
 
-<p><a id="idx:SLGresolution:2087"></a>This chapter describes 
+<p><a id="idx:SLGresolution:1949"></a>This chapter describes 
 SWI-Prolog's support for <em>Tabled execution</em> for one or more 
 Prolog predicates, also called <em>SLG resolution</em>. Tabling a 
 predicate provides two properties:
@@ -270,7 +270,7 @@ intermediate results. A solution is to use Datalog style bottom-up
 evaluation, i.e., applying rules on the axioms and derived facts until a 
 fixed point is reached. However, bottom-up evaluation typically derives 
 many facts that are never used. Tabling provides a <em>goal oriented</em> 
-resolution strategy for such problems and is enabled simply by adding a <a id="idx:table1:2088"></a><a class="pred" href="tabling-preds.html#table/1">table/1</a> 
+resolution strategy for such problems and is enabled simply by adding a <a id="idx:table1:1950"></a><a class="pred" href="tabling-preds.html#table/1">table/1</a> 
 directive to the program.
 
 <p>
@@ -298,33 +298,25 @@ Founded Semantics</span></a></div>
 founded semantics and the toplevel</span></a></div>
 <div class="toc-h2"><a class="sec" href="tabling-incremental.html"><span class="sec-nr">7.7</span> <span class="sec-title">Incremental 
 tabling</span></a></div>
-<div class="toc-h2"><a class="sec" href="tabling-monotonic.html"><span class="sec-nr">7.8</span> <span class="sec-title">Monotonic 
+<div class="toc-h2"><a class="sec" href="tabling-shared.html"><span class="sec-nr">7.8</span> <span class="sec-title">Shared 
 tabling</span></a></div>
-<div class="toc-h3"><a class="sec" href="tabling-monotonic.html#sec:7.8.1"><span class="sec-nr">7.8.1</span> <span class="sec-title">Eager 
-and lazy monotonic tabling</span></a></div>
-<div class="toc-h3"><a class="sec" href="tabling-monotonic.html#sec:7.8.2"><span class="sec-nr">7.8.2</span> <span class="sec-title">Tracking 
-new answers to monotonic tables</span></a></div>
-<div class="toc-h3"><a class="sec" href="tabling-monotonic.html#sec:7.8.3"><span class="sec-nr">7.8.3</span> <span class="sec-title">Monotonic 
-tabling with external data</span></a></div>
-<div class="toc-h2"><a class="sec" href="tabling-shared.html"><span class="sec-nr">7.9</span> <span class="sec-title">Shared 
-tabling</span></a></div>
-<div class="toc-h3"><a class="sec" href="tabling-shared.html#sec:7.9.1"><span class="sec-nr">7.9.1</span> <span class="sec-title">Abolishing 
+<div class="toc-h3"><a class="sec" href="tabling-shared.html#sec:7.8.1"><span class="sec-nr">7.8.1</span> <span class="sec-title">Abolishing 
 shared tables</span></a></div>
-<div class="toc-h3"><a class="sec" href="tabling-shared.html#sec:7.9.2"><span class="sec-nr">7.9.2</span> <span class="sec-title">Status 
+<div class="toc-h3"><a class="sec" href="tabling-shared.html#sec:7.8.2"><span class="sec-nr">7.8.2</span> <span class="sec-title">Status 
 and future of shared tabling</span></a></div>
-<div class="toc-h2"><a class="sec" href="tabling-restraints.html"><span class="sec-nr">7.10</span> <span class="sec-title">Tabling 
+<div class="toc-h2"><a class="sec" href="tabling-restraints.html"><span class="sec-nr">7.9</span> <span class="sec-title">Tabling 
 restraints: bounded rationality and tripwires</span></a></div>
-<div class="toc-h3"><a class="sec" href="tabling-restraints.html#sec:7.10.1"><span class="sec-nr">7.10.1</span> <span class="sec-title">Restraint 
+<div class="toc-h3"><a class="sec" href="tabling-restraints.html#sec:7.9.1"><span class="sec-nr">7.9.1</span> <span class="sec-title">Restraint 
 subgoal size</span></a></div>
-<div class="toc-h3"><a class="sec" href="tabling-restraints.html#sec:7.10.2"><span class="sec-nr">7.10.2</span> <span class="sec-title">Restraint 
+<div class="toc-h3"><a class="sec" href="tabling-restraints.html#sec:7.9.2"><span class="sec-nr">7.9.2</span> <span class="sec-title">Restraint 
 answer size</span></a></div>
-<div class="toc-h3"><a class="sec" href="tabling-restraints.html#sec:7.10.3"><span class="sec-nr">7.10.3</span> <span class="sec-title">Restraint 
+<div class="toc-h3"><a class="sec" href="tabling-restraints.html#sec:7.9.3"><span class="sec-nr">7.9.3</span> <span class="sec-title">Restraint 
 answer count</span></a></div>
-<div class="toc-h2"><a class="sec" href="tabling-preds.html"><span class="sec-nr">7.11</span> <span class="sec-title">Tabling 
+<div class="toc-h2"><a class="sec" href="tabling-preds.html"><span class="sec-nr">7.10</span> <span class="sec-title">Tabling 
 predicate reference</span></a></div>
-<div class="toc-h2"><a class="sec" href="tabling-about.html"><span class="sec-nr">7.12</span> <span class="sec-title">About 
+<div class="toc-h2"><a class="sec" href="tabling-about.html"><span class="sec-nr">7.11</span> <span class="sec-title">About 
 the tabling implementation</span></a></div>
-<div class="toc-h4"><a class="sec" href="tabling-about.html#sec:7.12.1"><span class="sec-nr">7.12.1</span> <span class="sec-title">Status 
+<div class="toc-h4"><a class="sec" href="tabling-about.html#sec:7.11.1"><span class="sec-nr">7.11.1</span> <span class="sec-title">Status 
 of tabling</span></a></div>
 </div>
 </body></html>

@@ -3,9 +3,8 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  1985-2021, University of Amsterdam
+    Copyright (c)  1985-2017, University of Amsterdam
                               VU University Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -89,10 +88,7 @@
             set_base_module/1,          % :Base
             eval_license/0,
             trie_insert_new/3,		% +Trie, +Term, -Node
-            thread_at_exit/1,           % :Goal
-            read_history/6,             % +Show, +Help, +Special, +Prompt,
-                                        % -Term, -Bindings
-            '$sig_atomic'/1             % :Goal
+            thread_at_exit/1            % :Goal
           ]).
 :- autoload(library(apply),[maplist/3,maplist/2]).
 :- autoload(library(lists),[sum_list/2]).
@@ -108,14 +104,13 @@
     index(:),
     hash(:),
     set_base_module(:),
-    thread_at_exit(0),
-    '$sig_atomic'(0).
+    thread_at_exit(0).
 
 /** <module> Backward compatibility
 
 This library defines predicates that used to exist in older version of
 SWI-Prolog, but are considered obsolete as there functionality is neatly
-covered by new features. Most often, these constructs are superseded by
+covered by new features. Most often, these constructs are superceeded by
 ISO-standard compliant predicates.
 
 Please also note the existence of   quintus.pl and edinburgh.pl for more
@@ -370,7 +365,7 @@ checklist(Goal, List) :-
 
 %!  sublist(:Goal, +List1, ?List2)
 %
-%   Succeeds if List2 unifies with a list holding those terms for which
+%   Succeeds if List2 unifies with a list holding those terms for wich
 %   call(Goal, Elem) succeeds.
 %
 %   @deprecated Use include/3 from library(apply)
@@ -624,7 +619,7 @@ hash(PI) :-
 
 %!  set_base_module(:Base) is det.
 %
-%   Set the default module from which we inherit.
+%   Set the default module from whic we inherit.
 %
 %   @deprecated Equivalent to set_module(base(Base)).
 
@@ -652,26 +647,3 @@ trie_insert_new(Trie, Term, Handle) :-
 
 thread_at_exit(Goal) :-
     prolog_listen(this_thread_exit, Goal).
-
-%!  read_history(+Show, +Help, +Special, +Prompt, -Term, -Bindings)
-%
-%   @deprecated use read_term_with_history/2.
-
-read_history(Show, Help, Special, Prompt, Term, Bindings) :-
-    read_term_with_history(
-        Term,
-        [ show(Show),
-          help(Help),
-          no_save(Special),
-          prompt(Prompt),
-          variable_names(Bindings)
-        ]).
-
-%!  '$sig_atomic'(:Goal)
-%
-%   Execute Goal without processing signals.
-%
-%   @deprecated use sig_atomic/1.
-
-'$sig_atomic'(Goal) :-
-    sig_atomic(Goal).

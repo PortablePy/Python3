@@ -3,9 +3,8 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2007-2021, University of Amsterdam
+    Copyright (c)  2007-2016, University of Amsterdam
                               VU University Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -38,13 +37,9 @@
           [ expand_phrase/2,            % :PhraseGoal, -Goal
             expand_phrase/4             % :PhraseGoal, +Pos0, -Goal, -Pos
           ]).
-% maplist expansion uses maplist.  Do not autoload.
-:- use_module(library(apply), [maplist/2, maplist/3, maplist/4]).
-% these may be autoloaded
 :- autoload(library(error),[type_error/2]).
 :- autoload(library(lists),[append/3]).
-:- autoload(library(prolog_code), [mkconj/3, extend_goal/3]).
-:- autoload(library(yall), [is_lambda/1, lambda_calls/3]).
+
 
 /** <module> Goal expansion rules to avoid meta-calling
 
@@ -52,7 +47,7 @@ This module defines goal_expansion/2 rules to   deal with commonly used,
 but fundamentally slow meta-predicates. Notable   maplist/2... defines a
 useful set of predicates, but its  execution is considerable slower than
 a traditional Prolog loop. Using this  library calls to maplist/2... are
-translated into an call  to  a  generated  auxiliary  predicate  that is
+translated into an call  to  a   generated  auxilary  predicate  that is
 compiled using compile_aux_clauses/1. Currently this module supports:
 
         * maplist/2..
@@ -79,24 +74,8 @@ through YAP.
 
 %!  expand_maplist(+Callable, +Lists, -Goal) is det.
 %
-%   Macro expansion for maplist/2 and  higher   arity.  The first clause
-%   deals with code using maplist on fixed  lists to reduce typing. Note
-%   that we only expand if all  lists   have  fixed length. In theory we
-%   only need at least one of fixed length,   but  in that case the goal
-%   expansion instantiates variables in the  clause, causing issues with
-%   the remainder of the clause expansion mechanism.
+%   Macro expansion for maplist/2 and higher arity.
 
-expand_maplist(Callable, Lists, Goal) :-
-    maplist(is_list, Lists),
-    maplist(length, Lists, Lens),
-    (   sort(Lens, [Len])
-    ->  Len < 10,
-        unfold_maplist(Lists, Callable, Goal),
-        !
-    ;   Maplist =.. [maplist,Callable|Lists],
-        print_message(warning, maplist(inconsistent_length(Maplist, Lens))),
-        fail
-    ).
 expand_maplist(Callable0, Lists, Goal) :-
     length(Lists, N),
     expand_closure_no_fail(Callable0, N, Callable1),
@@ -138,46 +117,6 @@ expand_maplist(Callable0, Lists, Goal) :-
         NextClause = (NextHead :- NextGoal, NextIterate),
         compile_aux_clauses([BaseClause, NextClause])
     ).
-
-unfold_maplist(Lists, Callable, Goal) :-
-    maplist(cons, Lists, Heads, Tails),
-    !,
-    maplist_extend_goal(Callable, Heads, G1),
-    unfold_maplist(Tails, Callable, G2),
-    mkconj(G1, G2, Goal).
-unfold_maplist(_, _, true).
-
-cons([H|T], H, T).
-
-%!  maplist_extend_goal(+Closure, +Args, -Goal) is semidet.
-%
-%   Extend the maplist Closure with Args.   This  can be tricky. Notably
-%   library(yall) lambda expressions may instantiate   the Closure while
-%   the  real  execution  does  not.  We    can   solve  that  by  using
-%   lambda_calls/3. The expand_goal_no_instantiate/2 ensures   safe goal
-%   expansion.
-
-maplist_extend_goal(Closure, Args, Goal) :-
-    is_lambda(Closure),
-    !,
-    lambda_calls(Closure, Args, Goal1),
-    expand_goal_no_instantiate(Goal1, Goal).
-maplist_extend_goal(Closure, Args, Goal) :-
-    extend_goal(Closure, Args, Goal1),
-    expand_goal_no_instantiate(Goal1, Goal).
-
-% using is_most_general_term/1 is an alternative, but fails
-% if the goal variables have attributes.
-
-expand_goal_no_instantiate(Goal0, Goal) :-
-    term_variables(Goal0, Vars0),
-    expand_goal(Goal0, Goal),
-    term_variables(Goal0, Vars1),
-    Vars0 == Vars1.
-
-%!  expand_closure_no_fail(+Goal, +Extra:integer, -GoalExt) is det.
-%
-%   Add Extra additional arguments to Goal.
 
 expand_closure_no_fail(Callable0, N, Callable1) :-
     '$expand_closure'(Callable0, N, Callable1),
@@ -300,21 +239,9 @@ dcg_goal(call_dcg(NT,Xs0,Xs), NT, Xs0, Xs).
 
 %!  dcg_extend(+Callable, +Pos0, -Goal, -Pos, +Xs0, ?Xs) is semidet.
 
-dcg_extend(Terminal, Pos0, Xs0 = DList, Pos, Xs0, Xs) :-
-    terminal(Terminal, DList, Xs),
-    !,
-    t_pos(Pos0, Pos).
-dcg_extend(Q0, Pos0, M:Q, Pos, Xs0, Xs) :-
-    nonvar(Q0), Q0 = M:Q1,
-    !,
-    '$expand':f2_pos(Pos0, MPos, APos0, Pos, MPos, APos),
-    dcg_extend(Q1, APos0, Q, APos, Xs0, Xs).
-dcg_extend(Control, _, _, _, _, _) :-
-    dcg_control(Control),
-    !,
-    fail.
 dcg_extend(Compound0, Pos0, Compound, Pos, Xs0, Xs) :-
     compound(Compound0),
+    \+ dcg_control(Compound0),
     !,
     extend_pos(Pos0, 2, Pos),
     compound_name_arguments(Compound0, Name, Args0),
@@ -322,9 +249,18 @@ dcg_extend(Compound0, Pos0, Compound, Pos, Xs0, Xs) :-
     compound_name_arguments(Compound, Name, Args).
 dcg_extend(Name, Pos0, Compound, Pos, Xs0, Xs) :-
     atom(Name),
+    \+ dcg_control(Name),
     !,
     extend_pos(Pos0, 2, Pos),
     compound_name_arguments(Compound, Name, [Xs0,Xs]).
+dcg_extend(Q0, Pos0, M:Q, Pos, Xs0, Xs) :-
+    compound(Q0), Q0 = M:Q1,
+    '$expand':f2_pos(Pos0, MPos, APos0, Pos, MPos, APos),
+    dcg_extend(Q1, APos0, Q, APos, Xs0, Xs).
+dcg_extend(Terminal, Pos0, Xs0 = DList, Pos, Xs0, Xs) :-
+    terminal(Terminal, DList, Xs),
+    !,
+    t_pos(Pos0, Pos).
 
 dcg_control(!).
 dcg_control([]).
@@ -334,17 +270,28 @@ dcg_control((_,_)).
 dcg_control((_;_)).
 dcg_control((_->_)).
 dcg_control((_*->_)).
+dcg_control(_:_).
 
-terminal([], DList, Tail) =>
+terminal(List, DList, Tail) :-
+    compound(List),
+    List = [_|_],
+    !,
+    '$skip_list'(_, List, T0),
+    (   var(T0)
+    ->  DList = List,
+        Tail = T0
+    ;   T0 == []
+    ->  append(List, Tail, DList)
+    ;   type_error(list, List)
+    ).
+terminal(List, DList, Tail) :-
+    List == [],
+    !,
     DList = Tail.
-terminal(String, DList, Tail), string(String) =>
+terminal(String, DList, Tail) :-
     string(String),
     string_codes(String, List),
     append(List, Tail, DList).
-terminal(List, DList, Tail), is_list(List) =>
-    append(List, Tail, DList).
-terminal(_, _, _) =>
-    fail.
 
 extend_pos(Var, _, Var) :-
     var(Var),
@@ -444,14 +391,3 @@ system:goal_expansion(GoalIn, GoalOut) :-
 system:goal_expansion(GoalIn, PosIn, GoalOut, PosOut) :-
     expand_apply(GoalIn, PosIn, GoalOut, PosOut).
 
-		 /*******************************
-		 *            MESSAGES		*
-		 *******************************/
-
-:- multifile
-    prolog:message//1.
-
-prolog:message(maplist(inconsistent_length(Maplist, Lens))) -->
-    { functor(Maplist, _, N) },
-    [ 'maplist/~d called with proper lists of different lengths (~p) always fails'
-      -[N, Lens] ].

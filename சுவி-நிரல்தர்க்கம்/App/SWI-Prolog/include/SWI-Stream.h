@@ -3,9 +3,8 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2011-2022, University of Amsterdam
-			      VU University Amsterdam
-			      SWI-Prolog Solutions b.v.
+    Copyright (c)  2011-2017, University of Amsterdam
+                              VU University Amsterdam
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -34,8 +33,8 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SWI_STREAM_H
-#define _SWI_STREAM_H
+#ifndef _PL_STREAM_H
+#define _PL_STREAM_H
 
 /* This appears to make the wide-character support compile and work
    on HPUX 11.23.  There really should be a cleaner way ...
@@ -92,8 +91,8 @@ stuff.
 
 #ifdef HAVE_DECLSPEC
 # ifdef PL_KERNEL
-#define PL_EXPORT(type)		__declspec(dllexport) extern type
-#define PL_EXPORT_DATA(type)	__declspec(dllexport) extern type
+#define PL_EXPORT(type)		__declspec(dllexport) type
+#define PL_EXPORT_DATA(type)	__declspec(dllexport) type
 #define install_t		void
 # else
 #  ifdef __BORLANDC__
@@ -111,13 +110,8 @@ stuff.
 #define install_t		__declspec(dllexport) void
 # endif
 #else /*HAVE_DECLSPEC*/
-# ifdef PL_SO_EXPORT
-#define PL_EXPORT(type)		extern PL_SO_EXPORT type
-#define PL_EXPORT_DATA(type)	extern PL_SO_EXPORT type
-# else
 #define PL_EXPORT(type)		extern type
 #define PL_EXPORT_DATA(type)	extern type
-# endif
 #define install_t		void
 #endif /*HAVE_DECLSPEC*/
 #endif /*_PL_EXPORT_DONE*/
@@ -153,7 +147,12 @@ typedef int64_t (*Sseek64_function)(void *handle, int64_t pos, int whence);
 typedef int   (*Sclose_function)(void *handle);
 typedef int   (*Scontrol_function)(void *handle, int action, void *arg);
 
-typedef struct recursiveMutex IOLOCK;
+#if defined(O_PLMT) && defined(PL_KERNEL)
+#include "pl-mutex.h"
+#define IOLOCK recursiveMutex
+#else
+typedef void *		IOLOCK;		/* Definition for external use */
+#endif
 
 #ifndef PL_HAVE_TERM_T
 #define PL_HAVE_TERM_T
@@ -179,7 +178,6 @@ typedef struct io_position
 
 					/* NOTE: check with encoding_names */
 					/* in pl-file.c */
-#undef IOENC
 typedef enum
 { ENC_UNKNOWN = 0,			/* invalid/unknown */
   ENC_OCTET,				/* raw 8 bit input */
@@ -187,14 +185,10 @@ typedef enum
   ENC_ISO_LATIN_1,			/* ISO Latin-1 (0..256) */
   ENC_ANSI,				/* default (multibyte) codepage */
   ENC_UTF8,
-  ENC_UTF16BE,				/* big endian UTF-16 */
-  ENC_UTF16LE,				/* little endian UTF-16 file */
-  ENC_WCHAR				/* wchar_t */
+  ENC_UNICODE_BE,			/* big endian unicode file */
+  ENC_UNICODE_LE,			/* little endian unicode file */
+  ENC_WCHAR				/* pl_wchar_t */
 } IOENC;
-
-#define ENC_UNICODE_BE ENC_UTF16BE
-#define ENC_UNICODE_LE ENC_UTF16LE
-
 
 #define SIO_NL_POSIX  0			/* newline as \n */
 #define SIO_NL_DOS    1			/* newline as \r\n */
@@ -208,14 +202,14 @@ typedef struct io_stream
   int			lastc;		/* last character written */
   int			magic;		/* magic number SIO_MAGIC */
   int			bufsize;	/* size of the buffer */
-  unsigned int		flags;		/* Status flags */
+  int			flags;		/* Status flags */
   IOPOS			posbuf;		/* location in file */
   IOPOS *		position;	/* pointer to above */
   void		       *handle;		/* function's handle */
   IOFUNCTIONS	       *functions;	/* open/close/read/write/seek */
   int			timeout;	/* timeout (milliseconds) */
   IOENC			encoding;	/* character encoding used */
-  int			locks;		/* lock/unlock count */
+  int		        locks;		/* lock/unlock count */
   int			references;	/* Reference-count */
   IOLOCK *		mutex;		/* stream mutex */
   void			(*close_hook)(void* closure);
@@ -235,7 +229,7 @@ typedef struct io_stream
 } IOSTREAM;
 
 
-#define SmakeFlag(n)	((unsigned int)1<<(n-1))
+#define SmakeFlag(n)	(1<<(n-1))
 
 #define SIO_FBUF	SmakeFlag(1)	/* full buffering */
 #define SIO_LBUF	SmakeFlag(2)	/* line buffering */
@@ -268,7 +262,6 @@ typedef struct io_stream
 #define SIO_REPXML	SmakeFlag(29)	/* Bad char --> XML entity */
 #define SIO_REPPL	SmakeFlag(30)	/* Bad char --> Prolog \hex\ */
 #define SIO_BOM		SmakeFlag(31)	/* BOM was detected/written */
-#define SIO_REPPLU	SmakeFlag(32)	/* Bad char --> Prolog \uXXXX */
 
 #define	SIO_SEEK_SET	0	/* From beginning of file.  */
 #define	SIO_SEEK_CUR	1	/* From current position.  */
@@ -300,24 +293,19 @@ PL_EXPORT_DATA(IOSTREAM)	S__iob[3];		/* Libs standard streams */
 #define Sgetc(s) S__updatefilepos_getc((s), Snpgetc(s))
 
 /* Control-operations */
-#define SIO_GETSIZE	  (1)		/* get size of underlying object */
-#define SIO_GETFILENO	  (2)		/* get underlying file (if any) */
-#define SIO_SETENCODING	  (3)		/* modify encoding of stream */
-#define SIO_FLUSHOUTPUT	  (4)		/* flush output */
-#define SIO_LASTERROR	  (5)		/* string holding last error */
+#define SIO_GETSIZE	(1)		/* get size of underlying object */
+#define SIO_GETFILENO	(2)		/* get underlying file (if any) */
+#define SIO_SETENCODING	(3)		/* modify encoding of stream */
+#define SIO_FLUSHOUTPUT	(4)		/* flush output */
+#define SIO_LASTERROR	(5)		/* string holding last error */
 #ifdef __WINDOWS__
-#define SIO_GETWINSOCK    (6)		/* get underlying SOCKET object */
+#define SIO_GETWINSOCK  (6)		/* get underlying SOCKET object */
 #endif
-#define SIO_GETPENDING    (7)		/* get #pending bytes */
-#define SIO_GETREPOSITION (8)		/* Test if stream is repositionable */
+#define SIO_GETPENDING	(7)		/* get #pending bytes */
 
 /* Sread_pending() */
 #define SIO_RP_BLOCK 0x1		/* wait for new input */
 #define SIO_RP_NOPOS 0x2		/* Do not update position */
-
-#define SIO_CLOSE_TRYLOCK	0x1	/* Sgcclose(): fail if we cannot lock */
-#define SIO_CLOSE_FORCE		0x2	/* Sgcclose(): force regardless of lock */
-/*#define #define SIO_CLOSE_GC	0x4        Sgcclose(): used internally */
 
 #if IOSTREAM_REPLACES_STDIO
 
@@ -378,7 +366,7 @@ PL_EXPORT_DATA(IOSTREAM)	S__iob[3];		/* Libs standard streams */
 		 *	    PROTOTYPES		*
 		 *******************************/
 
-PL_EXPORT(void)		SinitStreams(void);
+PL_EXPORT(void)		SinitStreams();
 PL_EXPORT(void)		Scleanup(void);
 PL_EXPORT(void)		Sreset(void);
 PL_EXPORT(int)		S__fupdatefilepos_getc(IOSTREAM *s, int c);
@@ -416,7 +404,6 @@ PL_EXPORT(int64_t)	Ssize(IOSTREAM *s);
 PL_EXPORT(int)		Sseek(IOSTREAM *s, long pos, int whence);
 PL_EXPORT(long)		Stell(IOSTREAM *s);
 PL_EXPORT(int)		Sclose(IOSTREAM *s);
-PL_EXPORT(int)		Sgcclose(IOSTREAM *s, int flags);
 PL_EXPORT(char *)	Sfgets(char *buf, int n, IOSTREAM *s);
 PL_EXPORT(char *)	Sgets(char *buf);
 PL_EXPORT(ssize_t)	Sread_pending(IOSTREAM *s,
@@ -439,7 +426,6 @@ PL_EXPORT(int)		StryLock(IOSTREAM *s);
 PL_EXPORT(int)		Sunlock(IOSTREAM *s);
 PL_EXPORT(IOSTREAM *)	Snew(void *handle, int flags, IOFUNCTIONS *functions);
 PL_EXPORT(IOSTREAM *)	Sopen_file(const char *path, const char *how);
-PL_EXPORT(IOSTREAM *)	Sopen_iri_or_file(const char *path, const char *how);
 PL_EXPORT(IOSTREAM *)	Sfdopen(int fd, const char *type);
 PL_EXPORT(int)		Sfileno(IOSTREAM *s);
 #ifdef __WINDOWS__
@@ -461,13 +447,8 @@ PL_EXPORT(int)		Sseek64(IOSTREAM *s, int64_t pos, int whence);
 PL_EXPORT(int)		ScheckBOM(IOSTREAM *s);
 PL_EXPORT(int)		SwriteBOM(IOSTREAM *s);
 
-#ifdef _SWI_PROLOG_H
-PL_EXPORT(IOENC)	PL_atom_to_encoding(atom_t name);
-PL_EXPORT(atom_t)	PL_encoding_to_atom(IOENC enc);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*_SWI_STREAM_H*/
+#endif /*_PL_STREAM_H*/

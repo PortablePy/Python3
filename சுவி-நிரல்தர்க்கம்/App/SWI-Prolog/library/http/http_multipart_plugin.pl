@@ -3,9 +3,8 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2014-2022, University of Amsterdam
-                              VU University Amsterdam
-                              SWI-Prolog Solutions b.v.
+    Copyright (c)  2014, University of Amsterdam
+                         VU University Amsterdam
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -202,12 +201,10 @@ part_value(Stream, Name, Params, Encoding, Part, Options) :-
     mime_properties(Params, Properties),
     read_string(Stream, _, String),
     atom_string(Atom, String).
-part_value(Stream, Name, Params, _Encoding, Name=Value, Options) :-
+part_value(Stream, Name, Params, _, Name=Value, Options) :-
     memberchk(filename(_), Params),
     option(on_filename(Goal), Options),
     !,
-%   Always save files binary
-%   set_encoding(Encoding, Stream, Options),
     call(Goal, Stream, Value, [name(Name)|Params]).
 part_value(Stream, Name, _, Encoding, Name=Value, Options) :-
     set_encoding(Encoding, Stream, Options),

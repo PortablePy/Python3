@@ -78,8 +78,6 @@
 	    normalize_scalar/2
 	]).
 :- use_module('../clpqr/highlight', []).
-:- use_module(library(error), [instantiation_error/1, type_error/2]).
-
 
 goal_expansion(geler(X,Y),geler(clpr,X,Y)).
 
@@ -96,7 +94,7 @@ goal_expansion(geler(X,Y),geler(clpr,X,Y)).
 {Rel} :-
 	var(Rel),
 	!,
-	instantiation_error(Rel).
+	throw(instantiation_error({Rel},1)).
 {R,Rs} :-
 	!,
 	{R},{Rs}.
@@ -135,8 +133,7 @@ goal_expansion(geler(X,Y),geler(clpr,X,Y)).
 	!,
 	nf(L-R,Nf),
 	submit_eq(Nf).
-{Rel} :-
-	type_error(clpr_constraint, Rel).
+{Rel} :- throw(type_error({Rel},1,'a constraint',Rel)).
 
 % entailed(C)
 %
@@ -173,8 +170,7 @@ negate(A>=B,A<B) :- !.
 negate(A=:=B,A=\=B) :- !.
 negate(A=B,A=\=B) :- !.
 negate(A=\=B,A=:=B) :- !.
-negate(Rel,_) :-
-	type_error(clpr_constraint, Rel).
+negate(Rel,_) :- throw( type_error(entailed(Rel),1,'a constraint',Rel)).
 
 % submit_eq(Nf)
 %
@@ -628,7 +624,7 @@ nf(Term,Norm) :-
 	nf_nonlin_2(Skel,A1n,A2n,Sa1,Sa2,Norm).
 %
 nf(Term,_) :-
-	type_error(clpr_expression, Term).
+	throw(type_error(nf(Term,_),1,'a numeric expression',Term)).
 
 % nf_number(N,Res)
 %

@@ -56,6 +56,7 @@
 
             cputime/1,				% -Seconds
             walltime/1,				% -Seconds
+            timed_call/2,                       % :Goal, :Options
 
             (thread_shared)/1,                  % :Spec
 
@@ -84,13 +85,10 @@
 :- use_module(library(debug)).
 :- use_module(library(dialect/xsb/source)).
 :- use_module(library(tables)).
+:- use_module(library(dialect/xsb/timed_call)).
 :- use_module(library(aggregate)).
 :- use_module(library(option)).
 :- use_module(library(apply)).
-:- if(exists_source(library(dialect/xsb/timed_call))).
-:- use_module(library(dialect/xsb/timed_call)).
-:- export(timed_call/2).
-:- endif.
 
 /** <module> XSB Prolog compatibility layer
 
@@ -520,7 +518,7 @@ gc_tables(Remaining) :-
 
 remaining_table(Trie) :-
     current_blob(Trie, trie),
-    '$is_answer_trie'(Trie, _Type),
+    '$is_answer_trie'(Trie),
     '$atom_references'(Trie, 0).
 
 %!  cputime(-Seconds) is det.

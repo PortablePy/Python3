@@ -3,10 +3,9 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2008-2022, University of Amsterdam
+    Copyright (c)  2008-2019, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -178,9 +177,7 @@ following finds the executable for =ls=:
 %       List is a list of `Name=Value` terms, where `Value` is expanded
 %       the same way as the Args argument. If neither `env` nor
 %       `environment` is passed the environment is inherited from the
-%       Prolog process.  At most one env(List) or environment(List) term
-%       may appear in the options. If multiple appear a
-%       `permission_error` is raised for the second option.
+%       Prolog process.
 %       * process(-PID)
 %       Unify PID with the process id of the created process.
 %       * detached(+Bool)
@@ -269,10 +266,8 @@ following finds the executable for =ls=:
 %           i.e., the environment is not inherited.
 
 process_create(Exe, Args, Options) :-
-    (   exe_options(ExeOptions),
-        absolute_file_name(Exe, PlProg, ExeOptions)
-    ->  true
-    ),
+    exe_options(ExeOptions),
+    absolute_file_name(Exe, PlProg, ExeOptions),
     must_be(list, Args),
     maplist(map_arg, Args, Av),
     prolog_to_os_filename(PlProg, Prog),
@@ -282,19 +277,10 @@ process_create(Exe, Args, Options) :-
     expand_env_option(environment, Options2, Options3),
     process_create(Term, Options3).
 
-%!  exe_options(-Options) is multi.
-%
-%   Get options for absolute_file_name to find   an  executable file. On
-%   Windows we first look for a  readable   file,  but  if this does not
-%   exist we are happy with a existing file because the file may be a
-%   [reparse point](https://docs.microsoft.com/en-us/windows/win32/fileio/reparse-points-and-file-operations)
-
 exe_options(Options) :-
     current_prolog_flag(windows, true),
     !,
-    (   Options = [ extensions(['',exe,com]), access(read), file_errors(fail) ]
-    ;   Options = [ extensions(['',exe,com]), access(exist) ]
-    ).
+    Options = [ extensions(['',exe,com]), access(read) ].
 exe_options(Options) :-
     Options = [ access(execute) ].
 
@@ -479,12 +465,3 @@ prolog:error_message(process_error(File, exit(Status))) -->
     [ 'Process "~w": exit status: ~w'-[File, Status] ].
 prolog:error_message(process_error(File, killed(Signal))) -->
     [ 'Process "~w": killed by signal ~w'-[File, Signal] ].
-prolog:error_message(existence_error(source_sink, path(Exe))) -->
-    [ 'Could not find executable file "~p" in '-[Exe] ],
-    path_var.
-
-path_var -->
-    (   { current_prolog_flag(windows, true) }
-    ->  [ '%PATH%'-[] ]
-    ;   [ '$PATH'-[] ]
-    ).

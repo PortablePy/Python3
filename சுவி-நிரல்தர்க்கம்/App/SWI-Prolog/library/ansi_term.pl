@@ -3,9 +3,8 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2010-2023, VU University Amsterdam
+    Copyright (c)  2010-2020, VU University Amsterdam
                               CWI, Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -36,15 +35,12 @@
 
 :- module(ansi_term,
           [ ansi_format/3,              % +Attr, +Format, +Args
-            ansi_get_color/2,           % +Which, -rgb(R,G,B)
-            ansi_hyperlink/2,           % +Stream,+Location
-            ansi_hyperlink/3            % +Stream,+URL,+Label
+            ansi_get_color/2            % +Which, -rgb(R,G,B)
           ]).
-:- autoload(library(error), [domain_error/2, must_be/2, instantiation_error/1]).
-:- autoload(library(lists), [append/3]).
-:- autoload(library(uri), [uri_file_name/2]).
+:- autoload(library(error),[domain_error/2,must_be/2]).
+:- autoload(library(lists),[append/2,append/3]).
 :- if(exists_source(library(time))).
-:- autoload(library(time), [call_with_time_limit/2]).
+:- autoload(library(time),[call_with_time_limit/2]).
 :- endif.
 
 
@@ -57,24 +53,14 @@ the following:
   - ansi_format/3 allows writing messages to the terminal with ansi
     attributes.
   - It defines the hook prolog:message_line_element/2, which provides
-    ansi attributes and hyperlinks for print_message/2.
-
-The behavior of this library is controlled by two Prolog flags:
-
-  - `color_term`
-    When `true`, activate the color output for this library.  Otherwise
-    simply call format/3.
-  - `hyperlink_term`
-    Emit terminal hyperlinks for url(Location) and url(URL, Label)
-    elements of Prolog messages.
+    ansi attributes for print_message/2.
 
 @see    http://en.wikipedia.org/wiki/ANSI_escape_code
 */
 
 :- multifile
     prolog:console_color/2,                     % +Term, -AnsiAttrs
-    supports_get_color/0,
-    hyperlink/2.                                % +Stream, +Spec
+    supports_get_color/0.
 
 
 color_term_flag_default(true) :-
@@ -88,10 +74,6 @@ color_term_flag_default(false).
 init_color_term_flag :-
     color_term_flag_default(Default),
     create_prolog_flag(color_term, Default,
-                       [ type(boolean),
-                         keep(true)
-                       ]),
-    create_prolog_flag(hyperlink_term, false,
                        [ type(boolean),
                          keep(true)
                        ]).
@@ -155,13 +137,8 @@ ansi_format(Stream, Class, Format, Args) :-
     class_attrs(Class, Attr),
     phrase(sgr_codes_ex(Attr), Codes),
     atomic_list_concat(Codes, ;, Code),
-    with_output_to(
-        Stream,
-        (   keep_line_pos(current_output, format('\e[~wm', [Code])),
-            format(Format, Args),
-            keep_line_pos(current_output, format('\e[0m'))
-        )
-    ),
+    format(string(Fmt), '\e[~~wm~w\e[0m', [Format]),
+    format(Stream, Fmt, [Code|Args]),
     flush_output.
 ansi_format(Stream, _Attr, Format, Args) :-
     format(Stream, Format, Args).
@@ -371,10 +348,6 @@ prolog:message_line_element(S, ansi(Class, Fmt, Args, Ctx)) :-
     ->  keep_line_pos(S, format(S, RI, RA))
     ;   true
     ).
-prolog:message_line_element(S, url(Location)) :-
-    ansi_hyperlink(S, Location).
-prolog:message_line_element(S, url(URL, Label)) :-
-    ansi_hyperlink(S, URL, Label).
 prolog:message_line_element(S, begin(Level, Ctx)) :-
     level_attrs(Level, Attr),
     stream_property(S, tty(true)),
@@ -413,81 +386,6 @@ class_attrs(Class, Attrs) :-
     '$messages':default_theme(Class, Attrs),
     !.
 class_attrs(Attrs, Attrs).
-
-%!  ansi_hyperlink(+Stream, +Location) is det.
-%!  ansi_hyperlink(+Stream, +URL, +Label) is det.
-%
-%   Create a hyperlink for a terminal emulator. The file is fairly easy,
-%   but getting the line and column across is   not as there seems to be
-%   no established standard. The  current   implementation  emits, i.e.,
-%   inserting a capital ``L`` before the line.
-%
-%       ``file://AbsFileName[#LLine[:Column]]``
-%
-%   @see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
-
-ansi_hyperlink(Stream, Location) :-
-    hyperlink(Stream, url(Location)),
-    !.
-ansi_hyperlink(Stream, Location) :-
-    location_label(Location, Label),
-    ansi_hyperlink(Stream, Location, Label).
-
-location_label(File:Line:Column, Label) =>
-    format(string(Label), '~w:~w:~w', [File,Line,Column]).
-location_label(File:Line, Label) =>
-    format(string(Label), '~w:~w', [File,Line]).
-location_label(File, Label) =>
-    format(string(Label), '~w', [File]).
-
-ansi_hyperlink(Stream, Location, Label) :-
-    hyperlink(Stream, url(Location, Label)),
-    !.
-ansi_hyperlink(Stream, File:Line:Column, Label) :-
-    !,
-    (   url_file_name(URI, File)
-    ->  format(Stream, '\e]8;;~w#~d:~d\e\\~w\e]8;;\e\\',
-               [ URI, Line, Column, Label ])
-    ;   format(Stream, '~w', [Label])
-    ).
-ansi_hyperlink(Stream, File:Line, Label) :-
-    !,
-    (   url_file_name(URI, File)
-    ->  format(Stream, '\e]8;;~w#~w\e\\~w\e]8;;\e\\',
-               [ URI, Line, Label ])
-    ;   format(Stream, '~w:~w', [File, Line])
-    ).
-ansi_hyperlink(Stream, File, Label) :-
-    (   url_file_name(URI, File)
-    ->  format(Stream, '\e]8;;~w\e\\~w\e]8;;\e\\',
-               [ URI, Label ])
-    ;   format(Stream, '~w', [File])
-    ).
-
-
-
-%!  hyperlink(+Stream, +Spec) is semidet.
-%
-%   Multifile hook that may be used   to redefine ansi_hyperlink/2,3. If
-%   this predicate succeeds the system assumes the link has been written
-%   to Stream.
-%
-%   @arg  Spec  is  either  url(Location)    or   url(URL,  Label).  See
-%   ansi_hyperlink/2,3 for details.
-
-:- dynamic has_lib_uri/1 as volatile.
-
-url_file_name(URL, File) :-
-    current_prolog_flag(hyperlink_term, true),
-    (   has_lib_uri(true)
-    ->  uri_file_name(URL, File)
-    ;   exists_source(library(uri))
-    ->  use_module(library(uri), [uri_file_name/2]),
-        uri_file_name(URL, File),
-        asserta(has_lib_uri(true))
-    ;   asserta(has_lib_uri(false)),
-        fail
-    ).
 
 %!  keep_line_pos(+Stream, :Goal)
 %

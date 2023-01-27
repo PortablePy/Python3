@@ -382,8 +382,8 @@ start at the first non-blank line and are ended by a blank line.
 or, for compatibility reasons, with <code>%%</code>&lt;<var>white</var>&gt;.<sup class="fn">2<span class="fn-text">The <code>%%</code> 
 leader was considered to give too many false positives on arbitrary 
 source code. It is still accepted, but invalid comments are silently 
-ignored, while invalid comments that start with <code>%</code> result in 
-a warning.</span></sup> The type and mode declaration is ended by the 
+ignored, while invalid comments that start with <code>%!</code> result 
+in a warning.</span></sup> The type and mode declaration is ended by the 
 first line that starts with a single %. E.g., the following two 
 fragments are identical wrt. PlDoc. Skipping blank-lines in <code>/**</code> 
 comments allows to start the comment on the second line.
@@ -824,7 +824,7 @@ A line break may be added by <em>ending</em> the physical line with the
 HTML linebreak, <code>&lt;br&gt;</code> or <code>&lt;br/&gt;</code>.<sup class="fn">5<span class="fn-text">The 
 markdown conventions are (original) two spaces at the of the physical 
 line and (GitHub) a physical line break. Neither fit well with source 
-code. Doxygen supports restricted HTML and allows for <code>&lt;brÿ</code>.</span></sup>
+code. Doxygen supports restricted HTML and allows for <code>&lt;br&gt;</code>.</span></sup>
 </dd>
 </dl>
 

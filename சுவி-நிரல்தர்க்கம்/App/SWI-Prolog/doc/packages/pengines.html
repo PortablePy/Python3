@@ -982,12 +982,6 @@ for controlling the <code>pengine(debug)</code> topic <br>
 <dt class="multidef"><span class="pred-tag">[det,multifile]</span><a id="thread_pool:create_pool/1"><span class="module">thread_pool</span>:<strong>create_pool</strong>(<var>+Application</var>)</a></dt>
 <dd class="defbody">
 On demand creation of a thread pool for a pengine application.</dd>
-<dt class="pubdef"><span class="pred-tag">[det]</span><a id="pengine_done/0"><strong>pengine_done</strong></a></dt>
-<dd class="defbody">
-Called from the pengine thread <code>at_exit</code> option. Destroys <i>child</i> 
-pengines using <a class="pred" href="#pengine_destroy/1">pengine_destroy/1</a>. 
-Cleaning up the Pengine is synchronised by the <code>pengine_done</code> 
-mutex. See <span class="pred-ext">read_event/6</span>.</dd>
 <dt class="multidef"><span class="pred-tag">[semidet,multifile]</span><a id="prepare_module/3"><strong>prepare_module</strong>(<var>+Module, 
 +Application, +Options</var>)</a></dt>
 <dd class="defbody">
@@ -1149,14 +1143,6 @@ calls <span class="pred-ext">read/1</span> using the current prompt.</dd>
 Hook to handle <a class="pred" href="#pengine_output/1">pengine_output/1</a> 
 from the remote pengine. If the hook fails, it calls <span class="pred-ext">print/1</span> 
 on <var>Term</var>.</dd>
-<dt class="pubdef"><span class="pred-tag">[det]</span><a id="portray_blob/2"><strong>portray_blob</strong>(<var>+Blob, 
-+Options</var>)</a></dt>
-<dd class="defbody">
-Portray non-text blobs that may appear in output terms. Not really sure 
-about that. Basically such terms need to be avoided as they are 
-meaningless outside the process. The generated error is hard to debug 
-though, so now we send them as <code>'$BLOB'(Type)</code>. Future 
-versions may include more info, depending on <var>Type</var>.</dd>
 <dt class="multidef"><span class="pred-tag">[semidet,multifile]</span><a id="write_result/3"><strong>write_result</strong>(<var>+Lang, 
 +Event, +Dict</var>)</a></dt>
 <dd class="defbody">
@@ -1165,10 +1151,6 @@ supports <code>prolog</code> and various JSON dialects. The hook
 <a class="pred" href="#event_to_json/3">event_to_json/3</a> can be used 
 to refine the JSON dialects. This hook must be used if a completely 
 different output format is desired.</dd>
-<dt class="pubdef"><a id="add_error_details/3"><strong>add_error_details</strong>(<var>+Error, 
-+JSON0, -JSON</var>)</a></dt>
-<dd class="defbody">
-Add format error code and location information to an error. Also used by <code>pengines_io.pl</code>.</dd>
 <dt class="multidef"><span class="pred-tag">[semidet,multifile]</span><a id="event_to_json/3"><strong>event_to_json</strong>(<var>+Event, 
 -JSONTerm, +Lang</var>)</a></dt>
 <dd class="defbody">
@@ -1264,7 +1246,6 @@ variables that get their name from the environment. </td></tr>
 
 <dl>
 <dt class="index-sep">?</dt>
-<dt><a class="idx" href="#add_error_details/3">add_error_details/3</a></dt>
 <dt><a class="idx" href="#authentication_hook/3">authentication_hook/3</a></dt>
 <dt><a class="idx" href="#current_pengine_application/1">current_pengine_application/1</a></dt>
 <dt><a class="idx" href="#event_to_json/3">event_to_json/3</a></dt>
@@ -1277,7 +1258,6 @@ variables that get their name from the environment. </td></tr>
 <dt><a class="idx" href="#pengine_debug/2">pengine_debug/2</a></dt>
 <dt><a class="idx" href="#pengine_destroy/1">pengine_destroy/1</a></dt>
 <dt><a class="idx" href="#pengine_destroy/2">pengine_destroy/2</a></dt>
-<dt><a class="idx" href="#pengine_done/0">pengine_done/0</a></dt>
 <dt><a class="idx" href="#pengine_event_loop/2">pengine_event_loop/2</a></dt>
 <dt><a class="idx" href="#pengine_input/2">pengine_input/2</a></dt>
 <dt><a class="idx" href="#pengine_next/2">pengine_next/2</a></dt>
@@ -1290,7 +1270,6 @@ variables that get their name from the environment. </td></tr>
 <dt><a class="idx" href="#pengine_self/1">pengine_self/1</a></dt>
 <dt><a class="idx" href="#pengine_stop/2">pengine_stop/2</a></dt>
 <dt><a class="idx" href="#pengine_user/1">pengine_user/1</a></dt>
-<dt><a class="idx" href="#portray_blob/2">portray_blob/2</a></dt>
 <dt><a class="idx" href="#prepare_goal/3">prepare_goal/3</a></dt>
 <dt><a class="idx" href="#prepare_module/3">prepare_module/3</a></dt>
 <dt><a class="idx" href="#prompt/3">prompt/3</a></dt>

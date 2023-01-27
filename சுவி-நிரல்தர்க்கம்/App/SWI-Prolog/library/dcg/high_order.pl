@@ -205,10 +205,10 @@ emit_list([H|T], Templ, SharedTempl, OnElem, OnSep) -->
     { copy_term(t(Templ,SharedTempl,OnElem,OnSep),
                 t(H,SharedTempl,OnElemCopy,OnSepCopy))
     },
-    call_dcg(OnElemCopy),
+    OnElemCopy,
     (   { T == [] }
     ->  []
-    ;   call_dcg(OnSepCopy),
+    ;   OnSepCopy,
         emit_list(T, Templ, SharedTempl, OnElem, OnSep)
     ).
 

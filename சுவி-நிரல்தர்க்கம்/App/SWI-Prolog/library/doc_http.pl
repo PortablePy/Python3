@@ -41,9 +41,7 @@
             doc_browser/1               % +What
           ]).
 :- use_module(library(pldoc)).
-:- if(exists_source(library(http/thread_httpd))).
 :- use_module(library(http/thread_httpd)).
-:- endif.
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/html_write)).
 :- use_module(library(http/mimetype)).
@@ -147,7 +145,6 @@ doc_server(Port, _) :-
     doc_enable(true),
     catch(doc_current_server(Port), _, fail),
     !.
-:- if(current_predicate(http_server/2)).
 doc_server(Port, Options) :-
     doc_enable(true),
     prepare_editor,
@@ -159,7 +156,6 @@ doc_server(Port, Options) :-
                   ], HTTPOptions),
     http_server(http_dispatch, HTTPOptions),
     assertz(doc_server_port(Port)).
-:- endif.
 
 %!  doc_current_server(-Port) is det.
 %
@@ -179,10 +175,6 @@ doc_current_server(Port) :-
     ->  Port = P
     ;   existence_error(http_server, pldoc)
     ).
-
-:- if(\+current_predicate(http_current_server/2)).
-http_current_server(_,_) :- fail.
-:- endif.
 
 %!  doc_browser is det.
 %!  doc_browser(+What) is semidet.

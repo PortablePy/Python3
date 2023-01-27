@@ -51,7 +51,6 @@
 :- autoload(library(lists),[member/2]).
 :- autoload(library(option),[option/2,option/3,meta_options/3]).
 :- autoload(library(prolog_clause),[clause_info/5]).
-:- autoload(library(prolog_code), [most_general_goal/2]).
 
 %:- set_prolog_flag(generate_debug_info, false).
 
@@ -163,8 +162,6 @@ list_module(Module, Options) :-
 %       lists:append([], L, L).
 %       ==
 %
-%     * A clause reference as obtained for example from nth_clause/3.
-%
 %    The following options are defined:
 %
 %      - variable_names(+How)
@@ -206,10 +203,6 @@ listing_(M:List, Options) :-
     !,
     forall(member(Spec, List),
            listing_(M:Spec, Options)).
-listing_(M:CRef, Options) :-
-    blob(CRef, clause),
-    !,
-    list_clauserefs([CRef], M, Options).
 listing_(X, Options) :-
     (   prolog:locate_clauses(X, ClauseRefs)
     ->  strip_module(X, Context, _),
@@ -224,8 +217,8 @@ list_clauserefs([H|T], Context, Options) :-
     list_clauserefs(H, Context, Options),
     list_clauserefs(T, Context, Options).
 list_clauserefs(Ref, Context, Options) :-
-    @(rule(M:_, Rule, Ref), Context),
-    list_clause(M:Rule, Ref, Context, Options).
+    @(clause(Head, Body, Ref), Context),
+    list_clause(Head, Body, Ref, Context, Options).
 
 %!  list_predicates(:Preds:list(pi), :Spec, +Options) is det.
 
@@ -383,21 +376,20 @@ write_declarations([H|T], Module) :-
 
 list_clauses(Pred, Source, Options) :-
     strip_module(Pred, Module, Head),
-    most_general_goal(Head, GenHead),
-    forall(( rule(Module:GenHead, Rule, Ref),
-             \+ \+ rule_head(Rule, Head)
+    generalise_term(Head, GenHead),
+    forall(( clause(Module:GenHead, Body, Ref),
+             \+ GenHead \= Head
            ),
-           list_clause(Module:Rule, Ref, Source, Options)).
+           list_clause(Module:GenHead, Body, Ref, Source, Options)).
 
-rule_head((Head0 :- _Body), Head) :- !, Head = Head0.
-rule_head((Head0,_Cond => _Body), Head) :- !, Head = Head0.
-rule_head((Head0 => _Body), Head) :- !, Head = Head0.
-rule_head(?=>(Head0, _Body), Head) :- !, Head = Head0.
-rule_head(Head, Head).
+generalise_term(Head, Gen) :-
+    compound(Head),
+    !,
+    compound_name_arity(Head, Name, Arity),
+    compound_name_arity(Gen,  Name, Arity).
+generalise_term(Head, Head).
 
-%!  list_clause(+Term, +ClauseRef, +ContextModule, +Options)
-
-list_clause(_Rule, Ref, _Source, Options) :-
+list_clause(_Head, _Body, Ref, _Source, Options) :-
     option(source(true), Options),
     (   clause_property(Ref, file(File)),
         clause_property(Ref, line_count(Line)),
@@ -416,20 +408,10 @@ list_clause(_Rule, Ref, _Source, Options) :-
         comment('% From database (decompiled)~n', []),
         fail                                    % try next clause
     ).
-list_clause(Module:(Head:-Body), Ref, Source, Options) :-
-    !,
-    list_clause(Module:Head, Body, :-, Ref, Source, Options).
-list_clause(Module:(Head=>Body), Ref, Source, Options) :-
-    list_clause(Module:Head, Body, =>, Ref, Source, Options).
-list_clause(Module:Head, Ref, Source, Options) :-
-    !,
-    list_clause(Module:Head, true, :-, Ref, Source, Options).
-
-list_clause(Module:Head, Body, Neck, Ref, Source, Options) :-
+list_clause(Module:Head, Body, Ref, Source, Options) :-
     restore_variable_names(Module, Head, Body, Ref, Options),
     write_module(Module, Source, Head),
-    Rule =.. [Neck,Head,Body],
-    portray_clause(Rule).
+    portray_clause((Head:-Body)).
 
 %!  restore_variable_names(+Module, +Head, +Body, +Ref, +Options) is det.
 %
@@ -739,12 +721,11 @@ do_portray_clause(Out, (:-Directive), Options) :-
     nlindent(Out, Indent),
     portray_list(List, Indent, Out, Options),
     write(Out, ').\n').
-do_portray_clause(Out, Clause, Options) :-
-    directive(Clause, Op, Directive),
+do_portray_clause(Out, (:-Directive), Options) :-
     !,
     option(indent(LeftMargin), Options, 0),
     indent(Out, LeftMargin),
-    format(Out, '~w ', [Op]),
+    write(Out, ':- '),
     DIndent is LeftMargin+3,
     portray_body(Directive, DIndent, noindent, 1199, Out, Options),
     full_stop(Out).
@@ -755,16 +736,11 @@ do_portray_clause(Out, Fact, Options) :-
     full_stop(Out).
 
 clause_term((Head:-Body), Head, :-, Body).
-clause_term((Head=>Body), Head, =>, Body).
-clause_term(?=>(Head,Body), Head, ?=>, Body).
 clause_term((Head-->Body), Head, -->, Body).
 
 full_stop(Out) :-
     '$put_token'(Out, '.'),
     nl(Out).
-
-directive((:- Directive), :-, Directive).
-directive((?- Directive), ?-, Directive).
 
 wrapped_list_directive(module(_,_)).
 %wrapped_list_directive(use_module(_,_)).
@@ -808,14 +784,6 @@ portray_body(Term, Indent, _, Pri, Out, Options) :-
     portray_body(Term, ArgIndent, noindent, 1200, Out, Options),
     nlindent(Out, Indent),
     write(Out, ')').
-portray_body(((AB),C), Indent, _, _Pri, Out, Options) :-
-    nonvar(AB),
-    AB = (A,B),
-    !,
-    infix_op(',', LeftPri, RightPri),
-    portray_body(A, Indent, noindent, LeftPri, Out, Options),
-    write(Out, ','),
-    portray_body((B,C), Indent, indent, RightPri, Out, Options).
 portray_body((A,B), Indent, _, _Pri, Out, Options) :-
     !,
     infix_op(',', LeftPri, RightPri),
@@ -1095,18 +1063,7 @@ pprint(Out, Term, Pri, Options) :-
     pprint_wrapped(Out, Term, Pri, Options).
 pprint(Out, Term, Pri, Options) :-
     listing_write_options(Pri, WrtOptions, Options),
-    write_term(Out, Term,
-               [ blobs(portray),
-                 portray_goal(portray_blob)
-               | WrtOptions
-               ]).
-
-portray_blob(Blob, _Options) :-
-    blob(Blob, _),
-    \+ atom(Blob),
-    !,
-    format(string(S), '~q', [Blob]),
-    format('~q', ['$BLOB'(S)]).
+    write_term(Out, Term, WrtOptions).
 
 nowrap_term('$VAR'(_)) :- !.
 nowrap_term(_{}) :- !.                  % empty dict
@@ -1140,7 +1097,7 @@ pprint_wrapped(Out, Dict, _, Options) :-
     format(Out, '}', []).
 pprint_wrapped(Out, Term, _, Options) :-
     Term =.. [Name|Args],
-    format(Out, '~q(', [Name]),
+    format(Out, '~q(', Name),
     line_position(Out, Indent),
     pprint_args(Args, Indent, Out, Options),
     format(Out, ')', []).

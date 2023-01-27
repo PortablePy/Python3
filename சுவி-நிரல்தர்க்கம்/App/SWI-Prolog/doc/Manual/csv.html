@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 9.0.4 Reference Manual: Section A.11</title><link rel="home" href="index.html">
+<title>SWI-Prolog 8.2.4 Reference Manual: Section A.11</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -294,7 +294,7 @@ Prolog DCG to&lsquo;read/write' CSV data. <var>Options</var>:
 <dt><strong>separator</strong>(<var>+Code</var>)</dt>
 <dd class="defbody">
 The comma-separator. Must be a character code. Default is (of course) 
-the comma. Character codes can be specified using the 0' notation. E.g., 
+the comma. Character codes can be specified using the 0' notion. E.g., 
 using <code>separator(0';)</code> parses a semicolon separated file.
 </dd>
 <dt><strong>ignore_quotes</strong>(<var>+Boolean</var>)</dt>
@@ -366,6 +366,16 @@ the
 </dd>
 </dl>
 
+<dl class="tags">
+<dt class="tag">To be done</dt>
+<dd>
+Input is read line by line. If a record separator is embedded in a 
+quoted field, parsing the record fails and another line is added to the 
+input. This does not nicely deal with other reasons why parsing the row 
+may fail.
+</dd>
+</dl>
+
 </dd>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="csv_read_row/3"><strong>csv_read_row</strong>(<var>+Stream, 
 -Row, +CompiledOptions</var>)</a></dt>
@@ -411,7 +421,7 @@ save_data(File) :-
        open(File, write, Out),
        forall(data(C1,C2,C3),
               csv_write_stream(Out, [row(C1,C2,C3)], [])),
-       close(Out)).
+       close(Out)),
 </pre>
 
 <p></dd>

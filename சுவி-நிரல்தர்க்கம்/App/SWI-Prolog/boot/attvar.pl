@@ -115,75 +115,22 @@ freeze(Var, Goal) :-
 freeze(_, Goal) :-
     Goal.
 
-%!  frozen(@Term, -Goal)
+%!  frozen(@Var, -Goals)
 %
-%   Unify Goals with the goals frozen on  Var   or  true if no goals are
-%   frozen on Var.
-%
-%   Note that attribute_goals//1 may   destructively  update attributes,
-%   often used to simplify the produced attributes. For frozen/2 however
-%   we must keep  the  original  variables.   Ideally  we  would  demand
-%   attribute_goals//1 to not modify any  attributes.   As  that is hard
-%   given where we are we now copy   the  result and fail, restoring the
-%   bindings. This is a simplified version of bagof/3.
+%   Unify Goals with the goals frozen on Var or true if no
+%   goals are grozen on Var.
 
-frozen(Term, Goal) :-
-    term_attvars(Term, AttVars),
-    (   AttVars == []
-    ->  Goal = true
-    ;   sort(AttVars, AttVars2),
-        '$term_attvar_variables'(Term, KVars),
-        Keep =.. [v|KVars],
-        findall(Keep+Goal0,
-                frozen_residuals(AttVars2, Goal0),
-                [Kept+Goal]),
-        rebind_vars(Keep, Kept)
-    ).
-
-frozen_residuals(AttVars, Goal) :-
-    phrase(attvars_residuals(AttVars), GoalList0),
-    sort(GoalList0, GoalList),
-    make_conjunction(GoalList, Goal).
-
-
-%!  rebind_vars(+Keep, +Kept) is det.
-%
-%   Rebind the variables that have been copied and possibly instantiated
-%   by attribute_goals//1. Note that library(clpfd)   may  bind internal
-%   variables to e.g., `processed`. We do   not rebind such variables as
-%   that would trigger constraints. These variables should not appear in
-%   the produced goal anyway. If  both   are  attvars, unifying may also
-%   re-trigger. Therefore, we remove the variables  from the copy before
-%   rebinding. This should be ok as all variable identifies are properly
-%   restored.
-
-rebind_vars(Keep, Kept) :-
-    functor(Keep, _, Arity),
-    rebind_vars(1, Arity, Keep, Kept).
-
-rebind_vars(I, Arity, KeepT, KeptT) :-
-    I =< Arity,
+frozen(Var, Goals) :-
+    get_attr(Var, freeze, Goals0),
     !,
-    arg(I, KeepT, Keep),
-    arg(I, KeptT, Kept),
-    (   attvar(Keep), attvar(Kept)
-    ->  del_attrs(Kept),
-        Keep = Kept
-    ;   var(Kept)
-    ->  Keep = Kept
-    ;   true
-    ),
-    I2 is I+1,
-    rebind_vars(I2, Arity, KeepT, KeptT).
-rebind_vars(_, _, _, _).
+    make_conjunction(Goals0, Goals).
+frozen(_, true).
 
-make_conjunction([], true).
-make_conjunction([H|T], Goal) :-
-    (   T == []
-    ->  Goal = H
-    ;   Goal = (H,G),
-        make_conjunction(T, G)
-    ).
+make_conjunction('$and'(A0, B0), (A, B)) :-
+    !,
+    make_conjunction(A0, A),
+    make_conjunction(B0, B).
+make_conjunction(G, G).
 
 
                  /*******************************
@@ -281,9 +228,8 @@ copy_term(Term, Copy, Gs) :-
     (   Vs == []
     ->  Gs = [],
         copy_term(Term, Copy)
-    ;   sort(Vs, Vs2),
-        findall(Term-Gs,
-                ( phrase(attvars_residuals(Vs2), Gs),
+    ;   findall(Term-Gs,
+                ( phrase(attvars_residuals(Vs), Gs),
                   delete_attributes(Term)
                 ),
                 [Copy-Gs])

@@ -38,12 +38,10 @@
 	  ]).
 :- use_module(library(time)).
 
-/** <module> SICStus 3-compatible library(timeout).
+/** <module> SICStus compatible time out handling
 
 @author Ulrich Neumerkel
 @author Jan Wielemaker
-
-@see https://sicstus.sics.se/sicstus/docs/3.12.11/html/sicstus/Timeout.html
 */
 
 :- meta_predicate

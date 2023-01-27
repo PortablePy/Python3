@@ -1,4 +1,6 @@
-/*  Part of CLP(Q) (Constraint Logic Programming over Rationals)
+/*  $Id$
+
+    Part of CLP(Q) (Constraint Logic Programming over Rationals)
 
     Author:        Leslie De Koninck
     E-mail:        Leslie.DeKoninck@cs.kuleuven.be
@@ -36,13 +38,15 @@
 */
 
 
-:- module(clpqr_ordering,
-	  [ combine/3,
+:- module(ordering,
+	[
+	    combine/3,
 	    ordering/1,
 	    arrangement/2
-	  ]).
+	]).
 :- use_module(class,
 	[
+	    class_get_clp/2,
 	    class_get_prio/2,
 	    class_put_prio/2
 	]).
@@ -50,14 +54,14 @@
 	[
 	    clp_type/2
 	]).
-:- autoload(library(ugraphs),
+:- use_module(library(ugraphs),
 	[
 	    add_edges/3,
 	    add_vertices/3,
 	    top_sort/2,
 	    ugraph_union/3
 	]).
-:- autoload(library(lists),
+:- use_module(library(lists),
 	[
 	    append/3
 	]).
@@ -200,4 +204,4 @@ group([L-Ll|Ls],K,Kl,Res) :-
 :- multifile
 	sandbox:safe_primitive/1.
 
-sandbox:safe_primitive(clpqr_ordering:ordering(_)).
+sandbox:safe_primitive(ordering:ordering(_)).

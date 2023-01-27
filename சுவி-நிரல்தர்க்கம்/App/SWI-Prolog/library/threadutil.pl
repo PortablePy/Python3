@@ -56,20 +56,14 @@
 :- autoload(library(apply),[maplist/3]).
 :- autoload(library(backcomp),[thread_at_exit/1]).
 :- autoload(library(edinburgh),[nodebug/0]).
-:- autoload(library(lists),[max_list/2,append/2]).
+:- autoload(library(gui_tracer),[gdebug/0]).
+:- autoload(library(lists),[max_list/2]).
 :- autoload(library(option),[merge_options/3,option/3]).
+:- autoload(library(pce),[send/2]).
 :- autoload(library(prolog_stack),
 	    [print_prolog_backtrace/2,get_prolog_backtrace/3]).
 :- autoload(library(statistics),[thread_statistics/2,show_profile/1]).
 :- autoload(library(thread),[call_in_thread/2]).
-
-:- if((\+current_prolog_flag(xpce,false),exists_source(library(pce)))).
-:- autoload(library(gui_tracer),[gdebug/0]).
-:- autoload(library(pce),[send/2]).
-:- else.
-gdebug :-
-    debug.
-:- endif.
 
 
 :- set_prolog_flag(generate_debug_info, false).
@@ -252,7 +246,7 @@ regkey(_, 'Anonymous').
 
 xterm_args(['-xrm', '*backarrowKeyIsErase: false']).
 xterm_args(['-xrm', '*backarrowKey: false']).
-xterm_args(['-fa', 'Ubuntu Mono', '-fs', 12]).
+xterm_args(['-fa', 'monospace;pixelsize=11;regular']).
 xterm_args(['-fg', '#000000']).
 xterm_args(['-bg', '#ffffdd']).
 xterm_args(['-sb', '-sl', 1000, '-rightbar']).
@@ -429,12 +423,10 @@ tprofile(Thread) :-
 %   Make sure XPCE is running if it is   attached, so we can use the
 %   graphical display using in_pce_thread/1.
 
-:- if(exists_source(library(pce))).
 init_pce :-
     current_prolog_flag(gui, true),
     !,
     call(send(@(display), open)).   % avoid autoloading
-:- endif.
 init_pce.
 
 

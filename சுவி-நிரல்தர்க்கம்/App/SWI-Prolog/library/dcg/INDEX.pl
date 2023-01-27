@@ -22,7 +22,6 @@ index((xdigits), 3, dcg_basics, basics).
 index((xdigit), 3, dcg_basics, basics).
 index((xinteger), 3, dcg_basics, basics).
 index((prolog_var_name), 3, dcg_basics, basics).
-index((eol), 2, dcg_basics, basics).
 index((eos), 2, dcg_basics, basics).
 index((remainder), 3, dcg_basics, basics).
 index((atom), 3, dcg_basics, basics).

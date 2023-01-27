@@ -5,11 +5,6 @@
 
 index((http_ax_attributes), 2, http_ax, ax).
 index((ax_form_attributes), 2, http_ax, ax).
-index((graphql_read_document), 3, graphql, graphql).
-index((graphql_execute_document), 4, graphql, graphql).
-index((graphql_document_to_string), 3, graphql, graphql).
-index((graphql_document_to_codes), 3, graphql, graphql).
-index((graphql), 4, graphql, graphql).
 index((html_resource), 2, html_head, html_head).
 index((html_requires), 3, html_head, html_head).
 index((html_current_resource), 1, html_head, html_head).
@@ -136,11 +131,12 @@ index((http_parameters), 3, http_parameters, http_parameters).
 index((http_convert_parameter), 4, http_parameters, http_parameters).
 index((http_convert_parameters), 2, http_parameters, http_parameters).
 index((http_convert_parameters), 3, http_parameters, http_parameters).
+index((http_absolute_uri), 2, http_path, http_path).
 index((http_absolute_location), 3, http_path, http_path).
 index((http_clean_location_cache), 0, http_path, http_path).
-index((http_absolute_uri), 2, http_path, http_path).
 index((reply_pwp_page), 3, http_pwp, http_pwp).
 index((pwp_handler), 2, http_pwp, http_pwp).
+index((serve_files_in_directory), 2, http_server_files, http_server_files).
 index((http_server), 1, http_server, http_server).
 index((http_current_server), 2, http_server, http_server).
 index((http_server_property), 2, http_server, http_server).
@@ -175,7 +171,6 @@ index((reply_json_dict), 2, http_server, http_server).
 index((http_read_json_dict), 2, http_server, http_server).
 index((http_read_json_dict), 3, http_server, http_server).
 index((is_json_content_type), 1, http_server, http_server).
-index((serve_files_in_directory), 2, http_server_files, http_server_files).
 index((http_set_session_options), 1, http_session, http_session).
 index((http_set_session), 1, http_session, http_session).
 index((http_set_session), 2, http_session, http_session).
@@ -229,6 +224,9 @@ index((js_arg_list), 3, javascript, js_write).
 index((js_arg), 3, javascript, js_write).
 index((js_args), 3, javascript, js_write).
 index((javascript), 4, javascript, js_write).
+index((prolog_to_json), 2, json_convert, json_convert).
+index((json_to_prolog), 2, json_convert, json_convert).
+index((json_object), 1, json_convert, json_convert).
 index((json_read), 2, json, json).
 index((json_read), 3, json, json).
 index((atom_json_term), 3, json, json).
@@ -241,9 +239,6 @@ index((json_read_dict), 3, json, json).
 index((json_write_dict), 2, json, json).
 index((json_write_dict), 3, json, json).
 index((atom_json_dict), 3, json, json).
-index((prolog_to_json), 2, json_convert, json_convert).
-index((json_to_prolog), 2, json_convert, json_convert).
-index((json_object), 1, json_convert, json_convert).
 index((mime_pack), 3, mime_pack, mimepack).
 index((file_mime_type), 2, mimetype, mimetype).
 index((file_content_type), 2, mimetype, mimetype).

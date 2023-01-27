@@ -68,9 +68,7 @@
 :- autoload(library(filesex),[directory_file_path/3]).
 :- autoload(library(option),[option/3,option/2,merge_options/3]).
 :- autoload(library(pairs),[pairs_values/2]).
-:- if(exists_source(library(time))).
 :- autoload(library(time),[call_with_time_limit/2]).
-:- endif.
 :- autoload(library(uri),
 	    [ uri_encoded/3,
 	      uri_data/3,
@@ -81,9 +79,7 @@
 :- autoload(library(http/http_path),[http_absolute_location/3]).
 :- autoload(library(http/mimetype),
 	    [file_content_type/2,file_content_type/3]).
-:- if(exists_source(library(http/thread_httpd))).
 :- autoload(library(http/thread_httpd),[http_spawn/2]).
-:- endif.
 :- use_module(library(settings),[setting/4,setting/2]).
 
 :- predicate_options(http_404/2, 1, [index(any)]).
@@ -91,7 +87,6 @@
                      [ cache(boolean),
                        mime_type(any),
                        static_gzip(boolean),
-                       cached_gzip(boolean),
                        pass_to(http_safe_file/2, 2),
                        headers(list)
                      ]).
@@ -895,8 +890,7 @@ find_handler(Path, Action, Options) :-
     ->  true
     ;   \+ sub_atom(Path, _, _, 0, /),
         atom_concat(Path, /, Dir),
-        find_handler(Tree, Dir, Action, Options),
-        \+ memberchk(segment_pattern(_), Options) % Variables in pattern
+        find_handler(Tree, Dir, Action, Options)
     ->  throw(http_reply(moved(Dir)))
     ;   throw(error(existence_error(http_location, Path), _))
     ).
@@ -990,13 +984,11 @@ action(Action, Request, Options) :-
 action(Action, Request, Options) :-
     spawn_action(Action, Request, Options).
 
-:- if(current_predicate(http_spawn/2)).
 spawn_action(Action, Request, Options) :-
     option(spawn(Spawn), Options),
     !,
     spawn_options(Spawn, SpawnOption),
     http_spawn(time_limit_action(Action, Request, Options), SpawnOption).
-:- endif.
 spawn_action(Action, Request, Options) :-
     time_limit_action(Action, Request, Options).
 
@@ -1007,7 +999,6 @@ spawn_options(Pool, Options) :-
     Options = [pool(Pool)].
 spawn_options(List, List).
 
-:- if(current_predicate(call_with_time_limit/2)).
 time_limit_action(Action, Request, Options) :-
     (   option(time_limit(TimeLimit), Options),
         TimeLimit \== default
@@ -1018,7 +1009,6 @@ time_limit_action(Action, Request, Options) :-
     TimeLimit > 0,
     !,
     call_with_time_limit(TimeLimit, call_action(Action, Request, Options)).
-:- endif.
 time_limit_action(Action, Request, Options) :-
     call_action(Action, Request, Options).
 
@@ -1067,18 +1057,10 @@ extend(G0, Extra, G) :-
 %           provided by file_mime_type/2.
 %
 %           * static_gzip(+Boolean)
-%           If `true` (default `false`) and, in addition to the plain
-%           file, there is a ``.gz`` file that is not older than the
+%           If true (default =false=) and, in addition to the plain
+%           file, there is a =|.gz|= file that is not older than the
 %           plain file and the client acceps =gzip= encoding, send
-%           the compressed file with ``Transfer-encoding: gzip``.
-%
-%           * cached_gzip(+Boolean)
-%           If `true` (default `false`) the system maintains cached
-%           gzipped files in a directory accessible using the file
-%           search path `http_gzip_cache` and serves these similar
-%           to the `static_gzip(true)` option.  If the gzip file
-%           does not exist or is older than the input the file is
-%           recreated.
+%           the compressed file with =|Transfer-encoding: gzip|=.
 %
 %           * unsafe(+Boolean)
 %           If =false= (default), validate that FileSpec does not
@@ -1118,10 +1100,6 @@ http_reply_file(File, Options, Request) :-
             time_file(Path, Time),
             TimeGZ >= Time
         ->  Reply = gzip_file(Type, PathGZ)
-        ;   option(cached_gzip(true), Options),
-            accepts_encoding(Request, gzip),
-            gzip_cached(Path, PathGZ)
-        ->  Reply = gzip_file(Type, PathGZ)
         ;   Reply = file(Type, Path)
         )
     ;   Reply = tmp_file(Type, Path)
@@ -1142,33 +1120,6 @@ accepts_encoding(Request, Enc) :-
     split_string(Part, ";", " ", [EncS|_]),
     atom_string(Enc, EncS).
 
-gzip_cached(Path, PathGZ) :-
-    with_mutex(http_reply_file, gzip_cached_sync(Path, PathGZ)).
-
-gzip_cached_sync(Path, PathGZ) :-
-    time_file(Path, Time),
-    variant_sha1(Path, SHA1),
-    (   absolute_file_name(http_gzip_cache(SHA1),
-                           PathGZ,
-                           [ access(read),
-                             file_errors(fail)
-                           ]),
-        time_file(PathGZ, TimeGZ),
-        TimeGZ >= Time
-    ->  true
-    ;   absolute_file_name(http_gzip_cache(SHA1),
-                           PathGZ,
-                           [ access(write),
-                             file_errors(fail)
-                           ])
-    ->  setup_call_cleanup(
-            gzopen(PathGZ, write, Out, [type(binary)]),
-            setup_call_cleanup(
-                open(Path, read, In, [type(binary)]),
-                copy_stream_data(In, Out),
-                close(In)),
-            close(Out))
-    ).
 
 %!  http_safe_file(+FileSpec, +Options) is det.
 %

@@ -3,10 +3,9 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2002-2022, University of Amsterdam
+    Copyright (c)  2002-2020, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -53,6 +52,8 @@
 	      option/3, select_option/3
 	    ]).
 :- autoload(library(readutil),[read_line_to_codes/2]).
+:- autoload(library(socket),
+	    [tcp_connect/3,negotiate_socks_connection/2]).
 :- autoload(library(uri),
 	    [ uri_resolve/3, uri_components/2, uri_data/3,
               uri_authority_components/2, uri_authority_data/3,
@@ -64,12 +65,10 @@
 :- if(exists_source(library(ssl))).
 :- autoload(library(ssl), [ssl_upgrade_legacy_options/2]).
 :- endif.
-:- use_module(library(socket)).
-
 
 /** <module> HTTP client library
 
-This library defines http_open/3, which opens an URL as a Prolog stream.
+This library defines http_open/3, which opens a  URL as a Prolog stream.
 The functionality of the  library  can   be  extended  by  loading two
 additional modules that act as plugins:
 
@@ -97,59 +96,58 @@ additional modules that act as plugins:
 
 Here is a simple example to fetch a web-page:
 
-```
-?- http_open('http://www.google.com/search?q=prolog', In, []),
-   copy_stream_data(In, user_output),
-   close(In).
-<!doctype html><head><title>prolog - Google Search</title><script>
-...
-```
+  ==
+  ?- http_open('http://www.google.com/search?q=prolog', In, []),
+     copy_stream_data(In, user_output),
+     close(In).
+  <!doctype html><head><title>prolog - Google Search</title><script>
+  ...
+  ==
 
 The example below fetches the modification time of a web-page. Note that
-=|Modified|= is =|''|= (the empty atom) if the  web-server does not provide a
+Modified is '' (the empty atom)  if   the  web-server does not provide a
 time-stamp for the resource. See also parse_time/2.
 
-```
-modified(URL, Stamp) :-
-       http_open(URL, In,
-                 [ method(head),
-                   header(last_modified, Modified)
-                 ]),
-       close(In),
-       Modified \== '',
-       parse_time(Modified, Stamp).
-```
+  ==
+  modified(URL, Stamp) :-
+          http_open(URL, In,
+                    [ method(head),
+                      header(last_modified, Modified)
+                    ]),
+          close(In),
+          Modified \== '',
+          parse_time(Modified, Stamp).
+  ==
 
 Then next example uses Google search. It exploits library(uri) to manage
 URIs, library(sgml) to load  an  HTML   document  and  library(xpath) to
 navigate the parsed HTML. Note that  you   may  need to adjust the XPath
-queries if the data returned by Google changes (this example indeed
-no longer works and currently fails at the first xpath/3 call)
+queries if the data returned by Google changes.
 
-```
-:- use_module(library(http/http_open)).
-:- use_module(library(xpath)).
-:- use_module(library(sgml)).
-:- use_module(library(uri)).
+  ==
+  :- use_module(library(http/http_open)).
+  :- use_module(library(xpath)).
+  :- use_module(library(sgml)).
+  :- use_module(library(uri)).
 
-google(For, Title, HREF) :-
-        uri_encoded(query_value, For, Encoded),
-        atom_concat('http://www.google.com/search?q=', Encoded, URL),
-        http_open(URL, In, []),
-        call_cleanup(
-            load_html(In, DOM, []),
-            close(In)),
-        xpath(DOM, //h3(@class=r), Result),
-        xpath(Result, //a(@href=HREF0, text), Title),
-        uri_components(HREF0, Components),
-        uri_data(search, Components, Query),
-        uri_query_components(Query, Parts),
-        memberchk(q=HREF, Parts).
-```
+  google(For, Title, HREF) :-
+          uri_encoded(query_value, For, Encoded),
+          atom_concat('http://www.google.com/search?q=', Encoded, URL),
+          http_open(URL, In, []),
+          call_cleanup(
+              load_html(In, DOM, []),
+              close(In)),
+          xpath(DOM, //h3(@class=r), Result),
+          xpath(Result, //a(@href=HREF0, text), Title),
+          uri_components(HREF0, Components),
+          uri_data(search, Components, Query),
+          uri_query_components(Query, Parts),
+          memberchk(q=HREF, Parts).
+  ==
 
 An example query is below:
 
-```
+==
 ?- google(prolog, Title, HREF).
 Title = 'SWI-Prolog',
 HREF = 'http://www.swi-prolog.org/' ;
@@ -163,7 +161,7 @@ Title = 'Learn Prolog Now!',
 HREF = 'http://www.learnprolognow.org/' ;
 Title = 'Free Online Version - Learn Prolog
 ...
-```
+==
 
 @see load_html/3 and xpath/3 can be used to parse and navigate HTML
      documents.
@@ -191,14 +189,12 @@ Title = 'Free Online Version - Learn Prolog
                        final_url(-atom),
                        header(+atom, -atom),
                        headers(-list),
-                       raw_headers(-list(string)),
                        connection(+atom),
                        method(oneof([delete,get,put,head,post,patch,options])),
                        size(-integer),
                        status_code(-integer),
                        output(-stream),
                        timeout(number),
-                       unix_socket(+atom),
                        proxy(atom, integer),
                        proxy_authorization(compound),
                        bypass_proxy(boolean),
@@ -246,14 +242,6 @@ user_agent('SWI-Prolog').
 %       HTTP Digest authentication.  This option is only provided
 %       if the plugin library(http/http_digest) is also loaded.
 %
-%     * unix_socket(+Path)
-%     Connect to the given Unix domain socket.  In this scenario
-%     the host name and port or ignored.  If the server replies
-%     with a _redirect_ message and the host differs from the
-%     original host as normal TCP connection is used to handle
-%     the redirect.  This option is inspired by curl(1)'s option
-%     `--unix-socket`.
-%
 %     * connection(+Connection)
 %     Specify the =Connection= header.  Default is =close=.  The
 %     alternative is =|Keep-alive|=.  This maintains a pool of
@@ -284,8 +272,7 @@ user_agent('SWI-Prolog').
 %     If provided, List is unified with  a list of Name(Value) pairs
 %     corresponding to fields in the reply   header.  Name and Value
 %     follow the same conventions  used   by  the header(Name,Value)
-%     option.  See also raw_headers(-List) which provides the entire
-%     HTTP reply header in unparsed representation.
+%     option.
 %
 %     * method(+Method)
 %     One of =get= (default), =head=, =delete=, =post=,   =put=   or
@@ -312,15 +299,6 @@ user_agent('SWI-Prolog').
 %     the atom `end`. HTTP 1.1 only   supports Unit = `bytes`. E.g.,
 %     to   ask   for    bytes    1000-1999,     use    the    option
 %     range(bytes(1000,1999))
-%
-%     * raw_encoding(+Encoding)
-%     Do not install a decoding filter for Encoding.  For example,
-%     using raw_encoding('applocation/gzip') the system will not
-%     decompress the stream if it is compressed using `gzip`.
-%
-%     * raw_headers(-Lines)
-%     Unify Lines with a list of strings that represents the complete
-%     reply header returned by the server.  See also headers(-List).
 %
 %     * redirect(+Boolean)
 %     If `false` (default `true`), do _not_ automatically redirect
@@ -399,14 +377,14 @@ user_agent('SWI-Prolog').
 %               Note that values must *not* be quoted because the
 %               library inserts the required quotes.
 %
-%               ```
+%               ==
 %               http_open([ host('www.example.com'),
 %                           path('/my/path'),
 %                           search([ q='Hello world',
 %                                    lang=en
 %                                  ])
 %                         ])
-%               ```
+%               ==
 %
 %   @throws error(existence_error(url, Id),Context) is raised if the
 %   HTTP result code is not in the range 200..299. Context has the
@@ -449,9 +427,7 @@ http_open(URL, Stream, QOptions) :-
 try_a_proxy(Parts, Result, Options) :-
     parts_uri(Parts, AtomicURL),
     option(host(Host), Parts),
-    (   option(unix_socket(Path), Options)
-    ->  Proxy = unix_socket(Path)
-    ;   (   option(proxy(ProxyHost:ProxyPort), Options)
+    (   (   option(proxy(ProxyHost:ProxyPort), Options)
         ;   is_list(Options),
             memberchk(proxy(ProxyHost,ProxyPort), Options)
         )
@@ -471,7 +447,10 @@ try_a_proxy(Parts, Result, Options) :-
 
 try_http_proxy(Method, Parts, Stream, Options0) :-
     option(host(Host), Parts),
-    proxy_request_uri(Method, Parts, RequestURI),
+    (   Method == direct
+    ->  parts_request_uri(Parts, RequestURI)
+    ;   parts_uri(Parts, RequestURI)
+    ),
     select_option(visited(Visited0), Options0, OptionsV, []),
     Options = [visited([Parts|Visited0])|OptionsV],
     parts_scheme(Parts, Scheme),
@@ -504,22 +483,6 @@ try_http_proxy(Method, Parts, Stream, Options0) :-
     ),
     return_final_url(Options).
 
-proxy_request_uri(direct, Parts, RequestURI) :-
-    !,
-    parts_request_uri(Parts, RequestURI).
-proxy_request_uri(unix_socket(_), Parts, RequestURI) :-
-    !,
-    parts_request_uri(Parts, RequestURI).
-proxy_request_uri(_, Parts, RequestURI) :-
-    parts_uri(Parts, RequestURI).
-
-http:http_connection_over_proxy(unix_socket(Path), _, _,
-                                StreamPair, Options, Options) :-
-    !,
-    unix_domain_socket(Socket),
-    tcp_connect(Socket, Path),
-    tcp_open_socket(Socket, In, Out),
-    stream_pair(StreamPair, In, Out).
 http:http_connection_over_proxy(direct, _, Host:Port,
                                 StreamPair, Options, Options) :-
     !,
@@ -645,7 +608,6 @@ guarded_send_rec_header(StreamPair, Stream, Host, RequestURI, Parts, Options) :-
                                     % read the reply header
     read_header(StreamPair, Parts, ReplyVersion, Code, Comment, Lines),
     update_cookies(Lines, Parts, Options),
-    reply_header(Lines, Options),
     do_open(ReplyVersion, Code, Comment, Lines, Options, Parts, Host,
             StreamPair, Stream).
 
@@ -795,7 +757,7 @@ do_open(_, Code, _, Lines, Options0, Parts, _, In, Stream) :-
                     context(_, 'Redirection loop')))
     ;   true
     ),
-    redirect_options(Parts, RedirectedParts, Options0, Options),
+    redirect_options(Options0, Options),
     http_open(RedirectedParts, Stream, Options).
                                         % Need authentication
 do_open(_Version, Code, _Comment, Lines, Options0, Parts, _Host, In0, Stream) :-
@@ -824,7 +786,7 @@ do_open(Version, Code, _, Lines, Options, Parts, Host, In0, In) :-
     return_fields(Options, Headers),
     return_headers(Options, Headers),
     consider_keep_alive(Lines, Parts, Host, In0, In1, Options),
-    transfer_encoding_filter(Lines, In1, In, Options),
+    transfer_encoding_filter(Lines, In1, In),
                                     % properly re-initialise the stream
     set_stream(In, file_name(URI)),
     set_stream(In, record_position(true)).
@@ -871,26 +833,11 @@ redirect_loop(Parts, Options) :-
     Count > 2.
 
 
-%!  redirect_options(+Parts, +RedirectedParts, +Options0, -Options) is det.
+%!  redirect_options(+Options0, -Options) is det.
 %
-%   A redirect from a POST should do  a   GET  on the returned URI. This
-%   means we must remove the method(post)   and  post(Data) options from
-%   the original option-list.
-%
-%   If we are connecting over a Unix   domain socket we drop this option
-%   if the redirect host does not match the initial host.
-
-redirect_options(Parts, RedirectedParts, Options0, Options) :-
-    select_option(unix_socket(_), Options0, Options1),
-    memberchk(host(Host), Parts),
-    memberchk(host(RHost), RedirectedParts),
-    debug(http(redirect), 'http_open: redirecting AF_UNIX ~w to ~w',
-          [Host, RHost]),
-    Host \== RHost,
-    !,
-    redirect_options(Options1, Options).
-redirect_options(_, _, Options0, Options) :-
-    redirect_options(Options0, Options).
+%   A redirect from a POST should do a GET on the returned URI. This
+%   means we must remove  the   method(post)  and post(Data) options
+%   from the original option-list.
 
 redirect_options(Options0, Options) :-
     (   select_option(post(_), Options0, Options1)
@@ -1007,7 +954,7 @@ return_final_url(Options) :-
 return_final_url(_).
 
 
-%!  transfer_encoding_filter(+Lines, +In0, -In, +Options) is det.
+%!  transfer_encoding_filter(+Lines, +In0, -In) is det.
 %
 %   Install filters depending on the transfer  encoding. If In0 is a
 %   stream-pair, we close the output   side. If transfer-encoding is
@@ -1016,23 +963,19 @@ return_final_url(_).
 %   on  this.  Exceptions  to  this   are  content-types  for  which
 %   disable_encoding_filter/1 holds.
 
-transfer_encoding_filter(Lines, In0, In, Options) :-
+transfer_encoding_filter(Lines, In0, In) :-
     transfer_encoding(Lines, Encoding),
     !,
-    transfer_encoding_filter_(Encoding, In0, In, Options).
-transfer_encoding_filter(Lines, In0, In, Options) :-
+    transfer_encoding_filter_(Encoding, In0, In).
+transfer_encoding_filter(Lines, In0, In) :-
     content_encoding(Lines, Encoding),
     content_type(Lines, Type),
     \+ http:disable_encoding_filter(Type),
     !,
-    transfer_encoding_filter_(Encoding, In0, In, Options).
-transfer_encoding_filter(_, In, In, _Options).
+    transfer_encoding_filter_(Encoding, In0, In).
+transfer_encoding_filter(_, In, In).
 
-transfer_encoding_filter_(Encoding, In0, In, Options) :-
-    option(raw_encoding(Encoding), Options),
-    !,
-    In = In0.
-transfer_encoding_filter_(Encoding, In0, In, _Options) :-
+transfer_encoding_filter_(Encoding, In0, In) :-
     stream_pair(In0, In1, Out),
     (   nonvar(Out)
     ->  close(Out)
@@ -1243,18 +1186,6 @@ rest_(Atom, L, []) :-
     atom_codes(Atom, L).
 
 
-%!  reply_header(+Lines, +Options) is det.
-%
-%   Return the entire reply header as  a   list  of strings to te option
-%   reply_headers(-Headers).
-
-reply_header(Lines, Options) :-
-    option(raw_headers(Headers), Options),
-    !,
-    maplist(string_codes, Headers, Lines).
-reply_header(_, _).
-
-
                  /*******************************
                  *   AUTHORIZATION MANAGEMENT   *
                  *******************************/
@@ -1265,10 +1196,10 @@ reply_header(_, _).
 %   If  Authorization  is  the   atom    =|-|=,   possibly   defined
 %   authorization is cleared.  For example:
 %
-%   ```
+%   ==
 %   ?- http_set_authorization('http://www.example.com/private/',
 %                             basic('John', 'Secret'))
-%   ```
+%   ==
 %
 %   @tbd    Move to a separate module, so http_get/3, etc. can use this
 %           too.
@@ -1521,7 +1452,7 @@ update_cookies(Lines, Parts, Options) :-
 %!                     +Options0, -Options) is semidet.
 %
 %   Hook implementation that makes  open_any/5   support  =http= and
-%   =https= URLs for =|Mode == read|=.
+%   =https= URLs for `Mode == read`.
 
 iostream:open_hook(URL, read, Stream, Close, Options0, Options) :-
     (atom(URL) -> true ; string(URL)),
@@ -1695,7 +1626,7 @@ keep_alive_error(Error) :-
 %   options based on the the broken-down request-URL.  The following
 %   example redirects all trafic, except for localhost over a proxy:
 %
-%       ```
+%       ==
 %       :- multifile
 %           http:open_options/2.
 %
@@ -1703,7 +1634,7 @@ keep_alive_error(Error) :-
 %           option(host(Host), Parts),
 %           Host \== localhost,
 %           Options = [proxy('proxy.local', 3128)].
-%       ```
+%       ==
 %
 %   This hook may return multiple   solutions.  The returned options
 %   are  combined  using  merge_options/3  where  earlier  solutions

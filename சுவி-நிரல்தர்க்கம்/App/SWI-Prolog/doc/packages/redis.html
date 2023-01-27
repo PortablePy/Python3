@@ -240,15 +240,11 @@ broker''</i>
 the SWI-Prolog Redis client</span></a></div>
 <div class="toc-h3"><a class="sec" href="#sec:1.1"><span class="sec-nr">1.1</span> <span class="sec-title">Redis 
 and threads</span></a></div>
-<div class="toc-h3"><a class="sec" href="#sec:1.2"><span class="sec-nr">1.2</span> <span class="sec-title">Redis 
-TLS support</span></a></div>
-<div class="toc-h3"><a class="sec" href="#sec:1.3"><span class="sec-nr">1.3</span> <span class="sec-title">Using 
-Redis sentinels</span></a></div>
-<div class="toc-h3"><a class="sec" href="#sec:1.4"><span class="sec-nr">1.4</span> <span class="sec-title">About 
+<div class="toc-h3"><a class="sec" href="#sec:1.2"><span class="sec-nr">1.2</span> <span class="sec-title">About 
 versions</span></a></div>
-<div class="toc-h3"><a class="sec" href="#sec:1.5"><span class="sec-nr">1.5</span> <span class="sec-title">Redis 
+<div class="toc-h3"><a class="sec" href="#sec:1.3"><span class="sec-nr">1.3</span> <span class="sec-title">Redis 
 as a message brokering system</span></a></div>
-<div class="toc-h3"><a class="sec" href="#sec:1.6"><span class="sec-nr">1.6</span> <span class="sec-title">History</span></a></div>
+<div class="toc-h3"><a class="sec" href="#sec:1.4"><span class="sec-nr">1.4</span> <span class="sec-title">History</span></a></div>
 <div class="toc-h2"><a class="sec" href="#sec:2"><span class="sec-nr">2</span> <span class="sec-title">library(redis): 
 Redis client</span></a></div>
 <div class="toc-h2"><a class="sec" href="#sec:3"><span class="sec-nr">3</span> <span class="sec-title">library(redis_streams): 
@@ -293,64 +289,7 @@ requests must be protected using <span class="pred-ext">with_mutex/2</span>.
 are locked using a mutex with the same name as the server name.
 </ul>
 
-<p><h3 id="sec:redis-tls"><a id="sec:1.2"><span class="sec-nr">1.2</span> <span class="sec-title">Redis 
-TLS support</span></a></h3>
-
-<p><a id="sec:redis-tls"></a>
-
-<p>If SWI-Prolog includes the <code>ssl</code> library, the Redis client 
-can connect to the server using TLS (SSL). Connecting requires the same 
-three files as <code>redis-cli</code> requires: the root certificate 
-file, a client certificate and the private key of the client 
-certificate. Below is an example call to <a class="pred" href="#redis_server/3">redis_server/3</a>:
-
-<pre class="code">
-:- redis_server(swish, localhost:6379,
-                [ user(bob),
-                  password("topsecret"),
-                  version(3),
-                  tls(true),
-                  cacert('ca.crt'),
-                  key('client.key'),
-                  cert('client.cert')
-                ]).
-</pre>
-
-<p><h3 id="sec:redis-sentinels"><a id="sec:1.3"><span class="sec-nr">1.3</span> <span class="sec-title">Using 
-Redis sentinels</span></a></h3>
-
-<p><a id="sec:redis-sentinels"></a>
-
-<p>Redis sentinels is one of the two options to create a high 
-availability service. It consists of minimally three Redis servers and 
-mininally three sentinel servers. The sentinel servers monitor the Redis 
-servers and will initiate a fail-over when the master becomes 
-disfunctional and certain safety constraints are satisfied. A client 
-needs to be aware of this setup. It is given an initial list with (a 
-subset of) the known sentinels. The client attempts to connect to one of 
-the sentinels and ask it for the current Redis master server. Details 
-are described in <a class="url" href="https://redis.io/docs/reference/sentinel-clients/">Sentinel 
-client spec</a>. The SWI-Prolog client maintains the actual list of 
-sentinels dynamically after successful discovery of the first sentinel. 
-Below is an example
-<a class="pred" href="#redis_server/3">redis_server/3</a> to connect to 
-a sentinel network. The <i>Address</i> specification
-<code>sentinel(swish)</code> tells the library we want to connect to a 
-sentinel network that is monitored under the name <code>swish</code>.
-
-<pre class="code">
-:- redis_server(swish_sentinel, sentinel(swish),
-                [ user(janbob),
-                  password("topsecret"),
-                  version(3),
-                  sentinels([ host1:26379,
-                                  host2:26379,
-                                  host3:26379
-                                ])
-                ]).
-</pre>
-
-<p><h3 id="sec:redis-versions"><a id="sec:1.4"><span class="sec-nr">1.4</span> <span class="sec-title">About 
+<p><h3 id="sec:redis-versions"><a id="sec:1.2"><span class="sec-nr">1.2</span> <span class="sec-title">About 
 versions</span></a></h3>
 
 <p><a id="sec:redis-versions"></a>
@@ -376,7 +315,7 @@ used for handling normal requests.
 <p>New projects are encouraged to use Redis version 6 with the version 3 
 protocol. See <a class="pred" href="#redis_server/3">redis_server/3</a>.
 
-<p><h3 id="sec:redis-brokering"><a id="sec:1.5"><span class="sec-nr">1.5</span> <span class="sec-title">Redis 
+<p><h3 id="sec:redis-brokering"><a id="sec:1.3"><span class="sec-nr">1.3</span> <span class="sec-title">Redis 
 as a message brokering system</span></a></h3>
 
 <p><a id="sec:redis-brokering"></a>
@@ -416,7 +355,7 @@ lost, etc.
 installation provides an example using streams and consumer groups to 
 realise one or more clients connected to one or more compute nodes.
 
-<p><h3 id="sec:redis-history"><a id="sec:1.6"><span class="sec-nr">1.6</span> <span class="sec-title">History</span></a></h3>
+<p><h3 id="sec:redis-history"><a id="sec:1.4"><span class="sec-nr">1.4</span> <span class="sec-title">History</span></a></h3>
 
 <p><a id="sec:redis-history"></a>
 
@@ -509,36 +448,6 @@ Specify the connection protocol version. Initially this is version 2.
 Redis 6 also supports version 3. When specified as <code>3</code>, the <var>HELLO</var> 
 command is used to upgrade the protocol.
 </dd>
-<dt><strong>tls</strong>(<var>true</var>)</dt>
-<dd class="defbody">
-When specified, initiate a TLS connection. If this option is specified 
-we must also specify the <code>cacert</code>, <code>key</code> and <code>cert</code> 
-options.
-</dd>
-<dt><strong>cacert</strong>(<var>+File</var>)</dt>
-<dd class="defbody">
-CA Certificate file to verify with.
-</dd>
-<dt><strong>cert</strong>(<var>+File</var>)</dt>
-<dd class="defbody">
-Client certificate to authenticate with.
-</dd>
-<dt><strong>key</strong>(<var>+File</var>)</dt>
-<dd class="defbody">
-Private key file to authenticate with.
-</dd>
-<dt><strong>sentinels</strong>(<var>+ListOfAddresses</var>)</dt>
-<dd class="defbody">
-Used together with an <var>Address</var> of the form <code>sentinel(MasterName)</code> 
-to enable contacting a network of Redis servers guarded by a sentinel 
-network.
-</dd>
-<dt><strong>sentinel_user</strong>(<var>+User</var>)</dt>
-<dt><strong>sentinel_password</strong>(<var>+Password</var>)</dt>
-<dd class="defbody">
-Authentication information for the senitels. When omitted we try to 
-connect withour authentication.
-</dd>
 </dl>
 
 <p>Instead of using these predicates, <a class="pred" href="#redis/2">redis/2</a> 
@@ -563,12 +472,6 @@ compatibility to the original GNU-Prolog interface and is equivalent to <code>re
 </dl>
 
 </dd>
-<dt class="pubdef"><span class="pred-tag">[semidet]</span><a id="tls_verify/5"><strong>tls_verify</strong>(<var>+SSL, 
-+ProblemCert, +AllCerts, +FirstCert, +Status</var>)</a></dt>
-<dd class="defbody">
-Accept or reject the certificate verification. Similar to the Redis 
-command line client (<code>redis-cli</code>), we accept the certificate 
-as long as it is signed, not verifying the hostname.</dd>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="redis_disconnect/1"><strong>redis_disconnect</strong>(<var>+Connection</var>)</a></dt>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="redis_disconnect/2"><strong>redis_disconnect</strong>(<var>+Connection, 
 +Options</var>)</a></dt>
@@ -1025,8 +928,8 @@ supports:
 Make <a class="pred" href="#xadd/4">xadd/4</a> add a <code>MAXLEN ~</code> <var>Count</var> 
 option to the <code>XADD</code> command, capping the length of the 
 stream. See also
-<var>Redis</var> as a message brokering system (<a class="sec" href="#sec:1.5">section 
-1.5</a>)
+<var>Redis</var> as a message brokering system (<a class="sec" href="#sec:1.3">section 
+1.3</a>)
 </dd>
 </dl>
 
@@ -1216,7 +1119,6 @@ dead letter."
 <dt><a class="idx" href="#redis_unsubscribe/2">redis_unsubscribe/2</a></dt>
 <dt><a class="idx" href="#redis_write/2">redis_write/2</a></dt>
 <dt><a class="idx" href="#redis_zscan/4">redis_zscan/4</a></dt>
-<dt><a class="idx" href="#tls_verify/5">tls_verify/5</a></dt>
 <dt><a class="idx" href="#xadd/4">xadd/4</a></dt>
 <dt><a class="idx" href="#xconsumer_stop/1">xconsumer_stop/1</a></dt>
 <dt><a class="idx" href="#xhook/2">xhook/2</a></dt>

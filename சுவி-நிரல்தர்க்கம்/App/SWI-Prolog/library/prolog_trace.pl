@@ -3,8 +3,7 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2019-2023, CWI, Amsterdam
-                              SWI-Prolog Solutions b.v.
+    Copyright (c)  2019, CWI, Amsterdam
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -36,13 +35,11 @@
 :- module(prolog_trace,
           [ trace/1,                            % :Spec
             trace/2,                            % :Spec, +Ports
-            tracing/2,                          % :Spec, -Ports
-            notraceall/0
+            tracing/2                           % :Spec, -Ports
           ]).
 :- autoload(library(apply),[maplist/2]).
 :- autoload(library(error),[instantiation_error/1]).
 :- autoload(library(prolog_wrap),[wrap_predicate/4]).
-:- autoload(library(prolog_code), [pi_head/2]).
 
 
 /** <module> Print access to predicates
@@ -117,16 +114,9 @@ set_trace(Spec, Pred) :-
     ),
     modify(Spec, Spec0, Spec1),
     retractall(tracing_mask(Pred, _)),
-    (   Spec1 == [] ; Spec1 == 0
-    ->  true
-    ;   asserta(tracing_mask(Pred, Spec1))
-    ),
+    asserta(tracing_mask(Pred, Spec1)),
     mask_ports(Spec1, Ports),
-    pi_head(Pred, Head0),
-    (   predicate_property(Head0, imported_from(M))
-    ->  requalify(Head0, M, Head)
-    ;   Head = Head0
-    ),
+    pi_head(Pred, Head),
     (   Spec1 == 0
     ->  unwrap_predicate(Head, trace),
         print_message(informational, trace(Head, Ports))
@@ -134,9 +124,6 @@ set_trace(Spec, Pred) :-
         wrap_predicate(Head, trace, Wrapped, Wrapper),
         print_message(informational, trace(Head, Ports))
     ).
-
-requalify(Term, M, M:Plain) :-
-    strip_module(Term, _, Plain).
 
 modify(Var, _, _) :-
     var(Var),
@@ -172,51 +159,53 @@ mask_ports(Pattern, [H|T]) :-
     is_masked(Pattern, H, Pattern1),
     mask_ports(Pattern1, T).
 
-wrapper(Ports, Head, Wrapped, Wrapper) :-
-    wrapper(Ports, Head, Id-Level, Wrapped, Wrapped1),
-    Wrapper = (   prolog_current_frame(Id),
-                  prolog_frame_attribute(Id, level, Level),
-                  Wrapped1
-              ).
+pi_head(M:PI, M:Head) :-
+    !,
+    pi_head(PI, Head).
+pi_head(Name/Arity, Head) :-
+    functor(Head, Name, Arity).
+pi_head(Name//Arity0, Head) :-
+    Arity is Arity0+1,
+    functor(Head, Name, Arity).
 
-wrapper(0, _, _, Wrapped, Wrapped) :-
+wrapper(0, _, Wrapped, Wrapped) :-
     !.
-wrapper(Pattern, Head, Id, Wrapped, Call) :-
+wrapper(Pattern, Head, Wrapped, Call) :-
     is_masked(Pattern, call, Pattern1),
     !,
-    wrapper(Pattern1, Head, Id, Wrapped, Call0),
-    Call = (   print_message(debug, frame(Head, trace(call, Id))),
+    wrapper(Pattern1, Head, Wrapped, Call0),
+    Call = (   print_message(debug, frame(Head, trace(call))),
                Call0
            ).
-wrapper(Pattern, Head, Id, Wrapped, Call) :-
+wrapper(Pattern, Head, Wrapped, Call) :-
     is_masked(Pattern, exit, Pattern1),
     !,
-    wrapper(Pattern1, Head, Id, Wrapped, Call0),
+    wrapper(Pattern1, Head, Wrapped, Call0),
     Call = (   Call0,
-               print_message(debug, frame(Head, trace(exit, Id)))
+               print_message(debug, frame(Head, trace(exit)))
            ).
-wrapper(Pattern, Head, Id, Wrapped, Call) :-
+wrapper(Pattern, Head, Wrapped, Call) :-
     is_masked(Pattern, redo, Pattern1),
     !,
-    wrapper(Pattern1, Head, Id, Wrapped, Call0),
+    wrapper(Pattern1, Head, Wrapped, Call0),
     Call = (   call_cleanup(Call0, Det = true),
                (   Det == true
                ->  true
                ;   true
-               ;   print_message(debug, frame(Head, trace(redo, Id))),
+               ;   print_message(debug, frame(Head, trace(redo))),
                    fail
                )
            ).
-wrapper(Pattern, Head, Id, Wrapped, Call) :-
+wrapper(Pattern, Head, Wrapped, Call) :-
     is_masked(Pattern, fail, Pattern1),
     !,
-    wrapper(Pattern1, Head, Id, Wrapped, Call0),
+    wrapper(Pattern1, Head, Wrapped, Call0),
     Call = call((   call_cleanup(Call0, Det = true),
                     (   Det == true
                     ->  !
                     ;   true
                     )
-                ;   print_message(debug, frame(Head, trace(fail, Id))),
+                ;   print_message(debug, frame(Head, trace(fail))),
                     fail
                 )).
 
@@ -233,11 +222,3 @@ is_masked(Pattern0, Port, Pattern) :-
 tracing(Spec, Ports) :-
     tracing_mask(Spec, Mask),
     mask_ports(Mask, Ports).
-
-%!  notraceall is det.
-%
-%   Remove all trace points
-
-notraceall :-
-    forall(tracing(M:Spec, _Ports),
-           trace(M:Spec, -all)).

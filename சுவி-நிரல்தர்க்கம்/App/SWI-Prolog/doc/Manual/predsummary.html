@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 9.0.4 Reference Manual: Section F.1</title><link rel="home" href="index.html">
+<title>SWI-Prolog 8.2.4 Reference Manual: Section F.1</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -237,17 +237,13 @@ table.frame-box
 
 <a id="sec:predsummary"></a>
 
-<p>The predicate summary is used by the Prolog predicate <a id="idx:apropos1:2916"></a><a class="pred" href="online-help.html#apropos/1">apropos/1</a> 
+<p>The predicate summary is used by the Prolog predicate <a id="idx:apropos1:2655"></a><a class="pred" href="online-help.html#apropos/1">apropos/1</a> 
 to suggest predicates from a keyword.
 <table>
 <tr><td><a class="pred" href="overrule.html#@/2">@/2</a></td><td>Call 
 using calling context</td></tr>
 <tr><td><a class="pred" href="control.html#!/0">!/0</a></td><td>Cut 
 (discard choicepoints)</td></tr>
-<tr><td><a class="pred" href="debug-determinism.html#$/0">$/0</a></td><td>Discard 
-choicepoints and demand deterministic success</td></tr>
-<tr><td><a class="pred" href="debug-determinism.html#$/1">$/1</a></td><td>Verify 
-goal succeeds deterministically</td></tr>
 <tr><td><a class="pred" href="control.html#,/2">,/2</a></td><td>Conjunction 
 of goals</td></tr>
 <tr><td><a class="pred" href="control.html#->/2">-&gt;/2</a></td><td>If-then-else</td></tr>
@@ -256,8 +252,6 @@ of goals</td></tr>
 functional notation</td></tr>
 <tr><td><a class="pred" href="bidicts.html#:</2">:&lt;/2</a></td><td>Select 
 keys from a dict</td></tr>
-<tr><td><a class="pred" href="wasm-js-call.html#:=/2">:=/2</a></td><td>WASM: 
-Call JavaScript</td></tr>
 <tr><td><a class="pred" href="control.html#;/2">;/2</a></td><td>Disjunction 
 of two goals</td></tr>
 <tr><td><a class="pred" href="arith.html#</2">&lt;/2</a></td><td>Arithmetic 
@@ -293,7 +287,7 @@ order larger</td></tr>
 <tr><td><a class="pred" href="compare.html#@>=/2">@&gt;=/2</a></td><td>Standard 
 order larger or equal</td></tr>
 <tr><td><a class="pred" href="control.html#\+/1">\+/1</a></td><td>Negation 
-by failure. Same as <a id="idx:not1:2917"></a><a class="pred" href="metacall.html#not/1">not/1</a></td></tr>
+by failure. Same as <a id="idx:not1:2656"></a><a class="pred" href="metacall.html#not/1">not/1</a></td></tr>
 <tr><td><a class="pred" href="compare.html#\=/2">\=/2</a></td><td>True 
 if arguments cannot be unified</td></tr>
 <tr><td><a class="pred" href="compare.html#\==/2">\==/2</a></td><td>True 
@@ -301,7 +295,7 @@ if arguments are not strictly equal</td></tr>
 <tr><td><a class="pred" href="compare.html#\=@=/2">\=@=/2</a></td><td>Not 
 structural identical</td></tr>
 <tr><td><span class="pred-ext">^/2</span></td><td>Existential 
-quantification (<a id="idx:bagof3:2918"></a><a class="pred" href="allsolutions.html#bagof/3">bagof/3</a>, <a id="idx:setof3:2919"></a><a class="pred" href="allsolutions.html#setof/3">setof/3</a>)</td></tr>
+quantification (<a id="idx:bagof3:2657"></a><a class="pred" href="allsolutions.html#bagof/3">bagof/3</a>, <a id="idx:setof3:2658"></a><a class="pred" href="allsolutions.html#setof/3">setof/3</a>)</td></tr>
 <tr><td><a class="pred" href="control.html#|/2">|/2</a></td><td>Disjunction 
 in DCGs. Same as <a class="pred" href="control.html#;/2">;/2</a></td></tr>
 <tr><td><span class="pred-ext">/1</span></td><td>DCG escape; constraints</td></tr>
@@ -313,8 +307,6 @@ predicate definition from the database</td></tr>
 computed tables</td></tr>
 <tr><td><a class="pred" href="tabling-preds.html#abolish_module_tables/1">abolish_module_tables/1</a></td><td>Abolish 
 all tables in a module</td></tr>
-<tr><td><a class="pred" href="tabling-monotonic.html#abolish_monotonic_tables/0">abolish_monotonic_tables/0</a></td><td>Abolish 
-all monotonic tables</td></tr>
 <tr><td><a class="pred" href="tabling-preds.html#abolish_nonincremental_tables/0">abolish_nonincremental_tables/0</a></td><td>Abolish 
 non-auttomatic tables</td></tr>
 <tr><td><a class="pred" href="tabling-preds.html#abolish_nonincremental_tables/1">abolish_nonincremental_tables/1</a></td><td>Abolish 
@@ -345,8 +337,6 @@ term to a non-backtrackable set</td></tr>
 term to a non-backtrackable set</td></tr>
 <tr><td><a class="pred" href="IO.html#append/1">append/1</a></td><td>Append 
 to a file</td></tr>
-<tr><td><a class="pred" href="system.html#apple_current_locale_identifier/1">apple_current_locale_identifier/1</a></td><td>Get 
-Apple locale info</td></tr>
 <tr><td><a class="pred" href="metacall.html#apply/2">apply/2</a></td><td>Call 
 goal with additional arguments</td></tr>
 <tr><td><a class="pred" href="online-help.html#apropos/1">apropos/1</a></td><td><code>library(online_help)</code> 
@@ -390,7 +380,7 @@ for end of file on input</td></tr>
 <tr><td><a class="pred" href="chario.html#at_end_of_stream/1">at_end_of_stream/1</a></td><td>Test 
 for end of file on stream</td></tr>
 <tr><td><a class="pred" href="consulting.html#at_halt/1">at_halt/1</a></td><td>Register 
-goal to run at <a id="idx:halt1:2920"></a><a class="pred" href="toplevel.html#halt/1">halt/1</a></td></tr>
+goal to run at <a id="idx:halt1:2659"></a><a class="pred" href="toplevel.html#halt/1">halt/1</a></td></tr>
 <tr><td><a class="pred" href="typetest.html#atom/1">atom/1</a></td><td>Type 
 check for an atom</td></tr>
 <tr><td><a class="pred" href="manipatom.html#atom_chars/2">atom_chars/2</a></td><td>Convert 
@@ -405,7 +395,7 @@ length of an atom</td></tr>
 between atom and number</td></tr>
 <tr><td><a class="pred" href="manipatom.html#atom_prefix/2">atom_prefix/2</a></td><td>Test 
 for start of atom</td></tr>
-<tr><td><a class="pred" href="string.html#atom_string/2">atom_string/2</a></td><td>Conversion 
+<tr><td><a class="pred" href="strings.html#atom_string/2">atom_string/2</a></td><td>Conversion 
 between atom and string</td></tr>
 <tr><td><a class="pred" href="manipatom.html#atom_to_term/3">atom_to_term/3</a></td><td>Convert 
 between atom and term</td></tr>
@@ -417,9 +407,9 @@ two atomic values to an atom</td></tr>
 a list of atomics</td></tr>
 <tr><td><a class="pred" href="manipatom.html#atomic_list_concat/3">atomic_list_concat/3</a></td><td>Append 
 a list of atomics with separator</td></tr>
-<tr><td><a class="pred" href="string.html#atomics_to_string/2">atomics_to_string/2</a></td><td>Concatenate 
+<tr><td><a class="pred" href="strings.html#atomics_to_string/2">atomics_to_string/2</a></td><td>Concatenate 
 list of inputs to a string</td></tr>
-<tr><td><a class="pred" href="string.html#atomics_to_string/3">atomics_to_string/3</a></td><td>Concatenate 
+<tr><td><a class="pred" href="strings.html#atomics_to_string/3">atomics_to_string/3</a></td><td>Concatenate 
 list of inputs to a string</td></tr>
 <tr><td><a class="pred" href="module-autoload.html#autoload/1">autoload/1</a></td><td>Declare 
 a file for autoloading</td></tr>
@@ -429,8 +419,6 @@ a file for autoloading specific predicates</td></tr>
 all predicates now</td></tr>
 <tr><td><a class="pred" href="autoload.html#autoload_path/1">autoload_path/1</a></td><td>Add 
 directories for autoloading</td></tr>
-<tr><td><a class="pred" href="wasm-js-call.html#await/2">await/2</a></td><td>WASM: 
-Wait for a Promise</td></tr>
 <tr><td><a class="pred" href="gvar.html#b_getval/2">b_getval/2</a></td><td>Fetch 
 backtrackable global variable</td></tr>
 <tr><td><a class="pred" href="bidicts.html#b_set_dict/3">b_set_dict/3</a></td><td>Destructive 
@@ -459,7 +447,7 @@ with additional arguments</td></tr>
 a goal with a cleaup-handler</td></tr>
 <tr><td><a class="pred" href="metacall.html#call_cleanup/2">call_cleanup/2</a></td><td>Guard 
 a goal with a cleaup-handler</td></tr>
-<tr><td><a class="pred" href="DCG.html#call_dcg/3">call_dcg/3</a></td><td>As <a id="idx:phrase3:2921"></a><a class="pred" href="DCG.html#phrase/3">phrase/3</a> 
+<tr><td><a class="pred" href="DCG.html#call_dcg/3">call_dcg/3</a></td><td>As <a id="idx:phrase3:2660"></a><a class="pred" href="DCG.html#phrase/3">phrase/3</a> 
 without type checking</td></tr>
 <tr><td><a class="pred" href="WFS.html#call_delays/2">call_delays/2</a></td><td>Get 
 the condition associated with an answer</td></tr>
@@ -475,8 +463,8 @@ goal with bounded depth</td></tr>
 goal in limited inferences</td></tr>
 <tr><td><a class="pred" href="typetest.html#callable/1">callable/1</a></td><td>Test 
 for atom or compound term</td></tr>
-<tr><td><a class="pred" href="consulting.html#cancel_halt/1">cancel_halt/1</a></td><td>Cancel <a id="idx:halt0:2922"></a><a class="pred" href="toplevel.html#halt/0">halt/0</a> 
-from an <a id="idx:athalt1:2923"></a><a class="pred" href="consulting.html#at_halt/1">at_halt/1</a> 
+<tr><td><a class="pred" href="consulting.html#cancel_halt/1">cancel_halt/1</a></td><td>Cancel <a id="idx:halt0:2661"></a><a class="pred" href="toplevel.html#halt/0">halt/0</a> 
+from an <a id="idx:athalt1:2662"></a><a class="pred" href="consulting.html#at_halt/1">at_halt/1</a> 
 hook</td></tr>
 <tr><td><a class="pred" href="exception.html#catch/3">catch/3</a></td><td>Call 
 goal, watching for exceptions</td></tr>
@@ -525,7 +513,7 @@ handle comments in sources</td></tr>
 <tr><td><a class="pred" href="compare.html#compare/3">compare/3</a></td><td>Compare, 
 using a predicate to determine the order</td></tr>
 <tr><td><a class="pred" href="consulting.html#compile_aux_clauses/1">compile_aux_clauses/1</a></td><td>Compile 
-predicates for <a id="idx:goalexpansion2:2924"></a><a class="pred" href="consulting.html#goal_expansion/2">goal_expansion/2</a></td></tr>
+predicates for <a id="idx:goalexpansion2:2663"></a><a class="pred" href="consulting.html#goal_expansion/2">goal_expansion/2</a></td></tr>
 <tr><td><a class="pred" href="dynamic.html#compile_predicates/1">compile_predicates/1</a></td><td>Compile 
 dynamic code to static</td></tr>
 <tr><td><a class="pred" href="consulting.html#compiling/0">compiling/0</a></td><td>Is 
@@ -556,12 +544,8 @@ clauses between predicates</td></tr>
 a copy of a term</td></tr>
 <tr><td><a class="pred" href="attvar.html#copy_term/3">copy_term/3</a></td><td>Copy 
 a term and obtain attribute-goals</td></tr>
-<tr><td><a class="pred" href="manipterm.html#copy_term/4">copy_term/4</a></td><td>Copy 
-part of the variables in a term</td></tr>
 <tr><td><a class="pred" href="attvar.html#copy_term_nat/2">copy_term_nat/2</a></td><td>Make 
 a copy of a term without attributes</td></tr>
-<tr><td><a class="pred" href="manipterm.html#copy_term_nat/4">copy_term_nat/4</a></td><td>Copy 
-part of the variables in a term</td></tr>
 <tr><td><a class="pred" href="flags.html#create_prolog_flag/3">create_prolog_flag/3</a></td><td>Create 
 a new Prolog flag</td></tr>
 <tr><td><a class="pred" href="miscarith.html#current_arithmetic_function/1">current_arithmetic_function/1</a></td><td>Examine 
@@ -604,8 +588,6 @@ software signal mapping</td></tr>
 open streams</td></tr>
 <tr><td><a class="pred" href="tabling-preds.html#current_table/2">current_table/2</a></td><td>Find 
 answer table for a variant</td></tr>
-<tr><td><a class="pred" href="db.html#current_transaction/1">current_transaction/1</a></td><td>Detect 
-encapsulating transactions</td></tr>
 <tr><td><a class="pred" href="db.html#current_trie/1">current_trie/1</a></td><td>Enumerate 
 known tries</td></tr>
 <tr><td><a class="pred" href="typetest.html#cyclic_term/1">cyclic_term/1</a></td><td>Test 
@@ -641,7 +623,7 @@ topic for debugging</td></tr>
 <tr><td><a class="pred" href="debug.html#debug/3">debug/3</a></td><td>Print 
 debugging message on topic</td></tr>
 <tr><td><span class="pred-ext">debug_control_hook/1</span></td><td><i>(hook)</i> 
-Extend <a id="idx:spy1:2925"></a><a class="pred" href="debugger.html#spy/1">spy/1</a>, 
+Extend <a id="idx:spy1:2664"></a><a class="pred" href="debugger.html#spy/1">spy/1</a>, 
 etc.</td></tr>
 <tr><td><a class="pred" href="debugger.html#debugging/0">debugging/0</a></td><td>Show 
 debugger status</td></tr>
@@ -663,8 +645,6 @@ a folder from the file system</td></tr>
 a file from the file system</td></tr>
 <tr><td><a class="pred" href="importmodule.html#delete_import_module/2">delete_import_module/2</a></td><td>Remove 
 module from import list</td></tr>
-<tr><td><a class="pred" href="debug-determinism.html#det/1">det/1</a></td><td>Declare 
-predicates as deterministic</td></tr>
 <tr><td><a class="pred" href="manipstack.html#deterministic/1">deterministic/1</a></td><td>Test 
 deterministicy of current clause</td></tr>
 <tr><td><a class="pred" href="coroutining.html#dif/2">dif/2</a></td><td>Constrain 
@@ -788,11 +768,11 @@ a constraint from the store</td></tr>
 <tr><td><a class="pred" href="allsolutions.html#findall/3">findall/3</a></td><td>Find 
 all solutions to a goal</td></tr>
 <tr><td><a class="pred" href="allsolutions.html#findall/4">findall/4</a></td><td>Difference 
-list version of <a id="idx:findall3:2926"></a><a class="pred" href="allsolutions.html#findall/3">findall/3</a></td></tr>
+list version of <a id="idx:findall3:2665"></a><a class="pred" href="allsolutions.html#findall/3">findall/3</a></td></tr>
 <tr><td><a class="pred" href="allsolutions.html#findnsols/4">findnsols/4</a></td><td>Find 
 first <var>N</var> solutions</td></tr>
 <tr><td><a class="pred" href="allsolutions.html#findnsols/5">findnsols/5</a></td><td>Difference 
-list version of <a id="idx:findnsols4:2927"></a><a class="pred" href="allsolutions.html#findnsols/4">findnsols/4</a></td></tr>
+list version of <a id="idx:findnsols4:2666"></a><a class="pred" href="allsolutions.html#findnsols/4">findnsols/4</a></td></tr>
 <tr><td><a class="pred" href="chario.html#fill_buffer/1">fill_buffer/1</a></td><td>Fill 
 the input buffer of a stream</td></tr>
 <tr><td><a class="pred" href="db.html#flag/3">flag/3</a></td><td>Simple 
@@ -819,22 +799,20 @@ output on a stream</td></tr>
 strftime() like date/time formatter</td></tr>
 <tr><td><a class="pred" href="system.html#format_time/4">format_time/4</a></td><td>date/time 
 formatter with explicit locale</td></tr>
-<tr><td><a class="pred" href="format.html#format_predicate/2">format_predicate/2</a></td><td>Program <a id="idx:format12:2928"></a><a class="pred" href="format.html#format/1">format/[1,2]</a></td></tr>
+<tr><td><a class="pred" href="format.html#format_predicate/2">format_predicate/2</a></td><td>Program <a id="idx:format12:2667"></a><a class="pred" href="format.html#format/1">format/[1,2]</a></td></tr>
 <tr><td><a class="pred" href="attvar.html#term_attvars/2">term_attvars/2</a></td><td>Find 
 attributed variables in a term</td></tr>
 <tr><td><a class="pred" href="manipterm.html#term_variables/2">term_variables/2</a></td><td>Find 
 unbound variables in a term</td></tr>
 <tr><td><a class="pred" href="manipterm.html#term_variables/3">term_variables/3</a></td><td>Find 
 unbound variables in a term</td></tr>
-<tr><td><a class="pred" href="string.html#text_to_string/2">text_to_string/2</a></td><td>Convert 
+<tr><td><a class="pred" href="strings.html#text_to_string/2">text_to_string/2</a></td><td>Convert 
 arbitrary text to a string</td></tr>
 <tr><td><a class="pred" href="coroutining.html#freeze/2">freeze/2</a></td><td>Delay 
 execution until variable is bound</td></tr>
 <tr><td><a class="pred" href="coroutining.html#frozen/2">frozen/2</a></td><td>Query 
 delayed goals on var</td></tr>
 <tr><td><a class="pred" href="manipterm.html#functor/3">functor/3</a></td><td>Get 
-name and arity of a term or construct a term</td></tr>
-<tr><td><a class="pred" href="manipterm.html#functor/4">functor/4</a></td><td>Get 
 name and arity of a term or construct a term</td></tr>
 <tr><td><a class="pred" href="memory.html#garbage_collect/0">garbage_collect/0</a></td><td>Invoke 
 the garbage collector</td></tr>
@@ -880,7 +858,7 @@ existing value in a dict</td></tr>
 value of a flag</td></tr>
 <tr><td><a class="pred" href="chario.html#get_single_char/1">get_single_char/1</a></td><td>Read 
 next character from the terminal</td></tr>
-<tr><td><a class="pred" href="string.html#get_string_code/3">get_string_code/3</a></td><td>Get 
+<tr><td><a class="pred" href="strings.html#get_string_code/3">get_string_code/3</a></td><td>Get 
 character code at index in string</td></tr>
 <tr><td><a class="pred" href="system.html#get_time/1">get_time/1</a></td><td>Get 
 current time</td></tr>
@@ -952,8 +930,6 @@ arithmetic expression</td></tr>
 if arg defines an absolute path</td></tr>
 <tr><td><a class="pred" href="assoc.html#is_assoc/1">is_assoc/1</a></td><td>Verify 
 association list</td></tr>
-<tr><td><a class="pred" href="wasm-js-call.html#is_async/0">is_async/0</a></td><td>WASM: 
-Test Prolog can call <a id="idx:await2:2929"></a><a class="pred" href="wasm-js-call.html#await/2">await/2</a></td></tr>
 <tr><td><a class="pred" href="bidicts.html#is_dict/1">is_dict/1</a></td><td>Type 
 check for a dict</td></tr>
 <tr><td><a class="pred" href="bidicts.html#is_dict/2">is_dict/2</a></td><td>Type 
@@ -964,10 +940,6 @@ check for an engine handle</td></tr>
 check for a list</td></tr>
 <tr><td><a class="pred" href="manipterm.html#is_most_general_term/1">is_most_general_term/1</a></td><td>Type 
 check for general term</td></tr>
-<tr><td><a class="pred" href="wasm-js-call.html#is_object/1">is_object/1</a></td><td>WASM: 
-Test JavaScript object</td></tr>
-<tr><td><a class="pred" href="wasm-js-call.html#is_object/2">is_object/2</a></td><td>WASM: 
-Test JavaScript object and class</td></tr>
 <tr><td><a class="pred" href="IO.html#is_stream/1">is_stream/1</a></td><td>Type 
 check for a stream handle</td></tr>
 <tr><td><a class="pred" href="db.html#is_trie/1">is_trie/1</a></td><td>Type 
@@ -1004,7 +976,7 @@ registered topics for debugging</td></tr>
 association tree from list</td></tr>
 <tr><td><a class="pred" href="lists.html#list_to_set/2">list_to_set/2</a></td><td>Remove 
 duplicates from a list</td></tr>
-<tr><td><a class="pred" href="string.html#list_strings/0">list_strings/0</a></td><td>Help 
+<tr><td><a class="pred" href="strings.html#list_strings/0">list_strings/0</a></td><td>Help 
 porting to version 7</td></tr>
 <tr><td><a class="pred" href="consulting.html#load_files/1">load_files/1</a></td><td>Load 
 source files</td></tr>
@@ -1042,10 +1014,10 @@ a dict from data</td></tr>
 between dict and list of pairs</td></tr>
 <tr><td><a class="pred" href="assoc.html#max_assoc/3">max_assoc/3</a></td><td>Highest 
 key in association tree</td></tr>
-<tr><td><a class="pred" href="builtinlist.html#memberchk/2">memberchk/2</a></td><td>Deterministic <a id="idx:member2:2930"></a><a class="pred" href="lists.html#member/2">member/2</a></td></tr>
-<tr><td><a class="pred" href="printmsg.html#message_hook/3">message_hook/3</a></td><td>Intercept <a id="idx:printmessage2:2931"></a><a class="pred" href="printmsg.html#print_message/2">print_message/2</a></td></tr>
+<tr><td><a class="pred" href="builtinlist.html#memberchk/2">memberchk/2</a></td><td>Deterministic <a id="idx:member2:2668"></a><a class="pred" href="lists.html#member/2">member/2</a></td></tr>
+<tr><td><a class="pred" href="printmsg.html#message_hook/3">message_hook/3</a></td><td>Intercept <a id="idx:printmessage2:2669"></a><a class="pred" href="printmsg.html#print_message/2">print_message/2</a></td></tr>
 <tr><td><span class="pred-ext">message_line_element/2</span></td><td><i>(hook)</i> 
-Intercept <a id="idx:printmessagelines3:2932"></a><a class="pred" href="printmsg.html#print_message_lines/3">print_message_lines/3</a></td></tr>
+Intercept <a id="idx:printmessagelines3:2670"></a><a class="pred" href="printmsg.html#print_message_lines/3">print_message_lines/3</a></td></tr>
 <tr><td><a class="pred" href="printmsg.html#message_property/2">message_property/2</a></td><td><i>(hook)</i> 
 Define display of a message</td></tr>
 <tr><td><a class="pred" href="threadcom.html#message_queue_create/1">message_queue_create/1</a></td><td>Create 
@@ -1162,7 +1134,7 @@ check for integer or float</td></tr>
 between number and one-char atoms</td></tr>
 <tr><td><a class="pred" href="manipatom.html#number_codes/2">number_codes/2</a></td><td>Convert 
 between number and character codes</td></tr>
-<tr><td><a class="pred" href="string.html#number_string/2">number_string/2</a></td><td>Convert 
+<tr><td><a class="pred" href="strings.html#number_string/2">number_string/2</a></td><td>Convert 
 between number and string</td></tr>
 <tr><td><a class="pred" href="manipterm.html#numbervars/3">numbervars/3</a></td><td>Number 
 unbound variables of a term</td></tr>
@@ -1190,7 +1162,7 @@ Open shared library (.so file)</td></tr>
 Open shared library (.so file)</td></tr>
 <tr><td><span class="pred-ext">open_source_hook/3</span></td><td><i>(hook)</i> 
 Open a source file</td></tr>
-<tr><td><a class="pred" href="string.html#open_string/2">open_string/2</a></td><td>Open 
+<tr><td><a class="pred" href="strings.html#open_string/2">open_string/2</a></td><td>Open 
 a string as a stream</td></tr>
 <tr><td><a class="pred" href="assoc.html#ord_list_to_assoc/2">ord_list_to_assoc/2</a></td><td>Convert 
 ordered list to assoc</td></tr>
@@ -1227,7 +1199,7 @@ environment parameters</td></tr>
 <tr><td><a class="pred" href="arith.html#plus/3">plus/3</a></td><td>Logical 
 integer addition</td></tr>
 <tr><td><a class="pred" href="termrw.html#portray/1">portray/1</a></td><td><i>(hook)</i> 
-Modify behaviour of <a id="idx:print1:2933"></a><a class="pred" href="termrw.html#print/1">print/1</a></td></tr>
+Modify behaviour of <a id="idx:print1:2671"></a><a class="pred" href="termrw.html#print/1">print/1</a></td></tr>
 <tr><td><a class="pred" href="examineprog.html#predicate_property/2">predicate_property/2</a></td><td>Query 
 predicate attributes</td></tr>
 <tr><td><a class="pred" href="builtinlist.html#predsort/3">predsort/3</a></td><td>Sort, 
@@ -1261,14 +1233,14 @@ to goal's environment stack</td></tr>
 <tr><td><a class="pred" href="ancestral-cut.html#prolog_cut_to/1">prolog_cut_to/1</a></td><td>Realise 
 global cuts</td></tr>
 <tr><td><a class="pred" href="edit.html#prolog_edit:locate/2">prolog_edit:locate/2</a></td><td>Locate 
-targets for <a id="idx:edit1:2934"></a><a class="pred" href="edit.html#edit/1">edit/1</a></td></tr>
+targets for <a id="idx:edit1:2672"></a><a class="pred" href="edit.html#edit/1">edit/1</a></td></tr>
 <tr><td><a class="pred" href="edit.html#prolog_edit:locate/3">prolog_edit:locate/3</a></td><td>Locate 
-targets for <a id="idx:edit1:2935"></a><a class="pred" href="edit.html#edit/1">edit/1</a></td></tr>
+targets for <a id="idx:edit1:2673"></a><a class="pred" href="edit.html#edit/1">edit/1</a></td></tr>
 <tr><td><a class="pred" href="edit.html#prolog_edit:edit_source/1">prolog_edit:edit_source/1</a></td><td>Call 
-editor for <a id="idx:edit1:2936"></a><a class="pred" href="edit.html#edit/1">edit/1</a></td></tr>
+editor for <a id="idx:edit1:2674"></a><a class="pred" href="edit.html#edit/1">edit/1</a></td></tr>
 <tr><td><a class="pred" href="edit.html#prolog_edit:edit_command/2">prolog_edit:edit_command/2</a></td><td>Specify 
 editor activation</td></tr>
-<tr><td><a class="pred" href="edit.html#prolog_edit:load/0">prolog_edit:load/0</a></td><td>Load <a id="idx:edit1:2937"></a><a class="pred" href="edit.html#edit/1">edit/1</a> 
+<tr><td><a class="pred" href="edit.html#prolog_edit:load/0">prolog_edit:load/0</a></td><td>Load <a id="idx:edit1:2675"></a><a class="pred" href="edit.html#edit/1">edit/1</a> 
 extensions</td></tr>
 <tr><td><a class="pred" href="excepthook.html#prolog_exception_hook/4">prolog_exception_hook/4</a></td><td>Rewrite 
 exceptions</td></tr>
@@ -1278,8 +1250,6 @@ meaning of file extension</td></tr>
 information on a goal environment</td></tr>
 <tr><td><a class="pred" href="idepreds.html#prolog_ide/1">prolog_ide/1</a></td><td>Program 
 access to the development environment</td></tr>
-<tr><td><a class="pred" href="interrupt.html#prolog_interrupt/0">prolog_interrupt/0</a></td><td>Allow 
-debugging a thread</td></tr>
 <tr><td><a class="pred" href="intlibs.html#prolog_list_goal/1">prolog_list_goal/1</a></td><td><i>(hook)</i> 
 Intercept tracer&rsquo;L' command</td></tr>
 <tr><td><a class="pred" href="prolog-event.html#prolog_listen/2">prolog_listen/2</a></td><td>Listen 
@@ -1289,7 +1259,7 @@ to Prolog events</td></tr>
 <tr><td><a class="pred" href="consulting.html#prolog_load_context/2">prolog_load_context/2</a></td><td>Context 
 information for directives</td></tr>
 <tr><td><a class="pred" href="loadfilehook.html#prolog_load_file/2">prolog_load_file/2</a></td><td><i>(hook)</i> 
-Program <a id="idx:loadfiles2:2938"></a><a class="pred" href="consulting.html#load_files/2">load_files/2</a></td></tr>
+Program <a id="idx:loadfiles2:2676"></a><a class="pred" href="consulting.html#load_files/2">load_files/2</a></td></tr>
 <tr><td><a class="pred" href="tracehook.html#prolog_skip_level/2">prolog_skip_level/2</a></td><td>Indicate 
 deepest recursion to trace</td></tr>
 <tr><td><a class="pred" href="tracehook.html#prolog_skip_frame/1">prolog_skip_frame/1</a></td><td>Perform&lsquo;skip' 
@@ -1307,7 +1277,7 @@ constraints to query variables</td></tr>
 <tr><td><a class="pred" href="termrw.html#prompt1/1">prompt1/1</a></td><td>Change 
 prompt for 1 line</td></tr>
 <tr><td><a class="pred" href="termrw.html#prompt/2">prompt/2</a></td><td>Change 
-the prompt used by <a id="idx:read1:2939"></a><a class="pred" href="termrw.html#read/1">read/1</a></td></tr>
+the prompt used by <a id="idx:read1:2677"></a><a class="pred" href="termrw.html#read/1">read/1</a></td></tr>
 <tr><td><a class="pred" href="protocol.html#protocol/1">protocol/1</a></td><td>Make 
 a log of the user interaction</td></tr>
 <tr><td><a class="pred" href="protocol.html#protocola/1">protocola/1</a></td><td>Append 
@@ -1368,15 +1338,17 @@ Prolog term</td></tr>
 Prolog term from stream</td></tr>
 <tr><td><a class="pred" href="termrw.html#read_clause/3">read_clause/3</a></td><td>Read 
 clause from stream</td></tr>
+<tr><td><a class="pred" href="termrw.html#read_history/6">read_history/6</a></td><td>Read 
+using history substitution</td></tr>
 <tr><td><a class="pred" href="files.html#read_link/3">read_link/3</a></td><td>Read 
 a symbolic link</td></tr>
 <tr><td><a class="pred" href="chario.html#read_pending_codes/3">read_pending_codes/3</a></td><td>Fetch 
 buffered input from a stream</td></tr>
 <tr><td><a class="pred" href="chario.html#read_pending_chars/3">read_pending_chars/3</a></td><td>Fetch 
 buffered input from a stream</td></tr>
-<tr><td><a class="pred" href="string.html#read_string/3">read_string/3</a></td><td>Read 
+<tr><td><a class="pred" href="strings.html#read_string/3">read_string/3</a></td><td>Read 
 a number of characters into a string</td></tr>
-<tr><td><a class="pred" href="string.html#read_string/5">read_string/5</a></td><td>Read 
+<tr><td><a class="pred" href="strings.html#read_string/5">read_string/5</a></td><td>Read 
 string upto a delimiter</td></tr>
 <tr><td><a class="pred" href="termrw.html#read_term/2">read_term/2</a></td><td>Read 
 term with options</td></tr>
@@ -1384,8 +1356,6 @@ term with options</td></tr>
 term with options from stream</td></tr>
 <tr><td><a class="pred" href="termrw.html#read_term_from_atom/3">read_term_from_atom/3</a></td><td>Read 
 term with options from atom</td></tr>
-<tr><td><a class="pred" href="termrw.html#read_term_with_history/2">read_term_with_history/2</a></td><td>Read 
-term with command line history</td></tr>
 <tr><td><a class="pred" href="db.html#recorda/2">recorda/2</a></td><td>Record 
 term in the database (first)</td></tr>
 <tr><td><a class="pred" href="db.html#recorda/3">recorda/3</a></td><td>Record 
@@ -1493,21 +1463,9 @@ OS command</td></tr>
 <tr><td><a class="pred" href="system.html#shell/2">shell/2</a></td><td>Execute 
 OS command</td></tr>
 <tr><td><a class="pred" href="delcont.html#shift/1">shift/1</a></td><td>Shift 
-control to the closest <a id="idx:reset3:2940"></a><a class="pred" href="delcont.html#reset/3">reset/3</a></td></tr>
-<tr><td><a class="pred" href="delcont.html#shift_for_copy/1">shift_for_copy/1</a></td><td>Shift 
-control to the closest <a id="idx:reset3:2941"></a><a class="pred" href="delcont.html#reset/3">reset/3</a></td></tr>
+control to the closest <a id="idx:reset3:2678"></a><a class="pred" href="delcont.html#reset/3">reset/3</a></td></tr>
 <tr><td><a class="pred" href="profile.html#show_profile/1">show_profile/1</a></td><td>Show 
 results of the profiler</td></tr>
-<tr><td><a class="pred" href="threadcom.html#sig_atomic/1">sig_atomic/1</a></td><td>Run 
-goal without handling signals</td></tr>
-<tr><td><a class="pred" href="threadcom.html#sig_block/1">sig_block/1</a></td><td>Block 
-matching thread signals</td></tr>
-<tr><td><a class="pred" href="threadcom.html#sig_pending/1">sig_pending/1</a></td><td>Query 
-pending signals</td></tr>
-<tr><td><a class="pred" href="threadcom.html#sig_remove/2">sig_remove/2</a></td><td>Remove 
-pending signals</td></tr>
-<tr><td><a class="pred" href="threadcom.html#sig_unblock/1">sig_unblock/1</a></td><td>Unblock 
-matching thread signals</td></tr>
 <tr><td><a class="pred" href="tabling-restraints.html#size_abstract_term/3">size_abstract_term/3</a></td><td>Abstract 
 a term (tabling support)</td></tr>
 <tr><td><a class="pred" href="files.html#size_file/2">size_file/2</a></td><td>Get 
@@ -1520,8 +1478,6 @@ to character in current input</td></tr>
 to character on stream</td></tr>
 <tr><td><a class="pred" href="miscpreds.html#sleep/1">sleep/1</a></td><td>Suspend 
 execution for specified time</td></tr>
-<tr><td><a class="pred" href="db.html#snapshot/1">snapshot/1</a></td><td>Run 
-goal in isolation</td></tr>
 <tr><td><a class="pred" href="builtinlist.html#sort/2">sort/2</a></td><td>Sort 
 elements in a list</td></tr>
 <tr><td><a class="pred" href="builtinlist.html#sort/4">sort/4</a></td><td>Sort 
@@ -1536,13 +1492,15 @@ source file of predicate</td></tr>
 about loaded files</td></tr>
 <tr><td><a class="pred" href="consulting.html#source_location/2">source_location/2</a></td><td>Location 
 of last read term</td></tr>
-<tr><td><a class="pred" href="string.html#split_string/4">split_string/4</a></td><td>Break 
+<tr><td><a class="pred" href="strings.html#split_string/4">split_string/4</a></td><td>Break 
 a string into substrings</td></tr>
 <tr><td><a class="pred" href="debugger.html#spy/1">spy/1</a></td><td>Force 
 tracer on specified predicate</td></tr>
 <tr><td><a class="pred" href="system.html#stamp_date_time/3">stamp_date_time/3</a></td><td>Convert 
 time-stamp to date structure</td></tr>
-<tr><td><a class="pred" href="builtin-statistics.html#statistics/2">statistics/2</a></td><td>Obtain 
+<tr><td><a class="pred" href="statistics.html#statistics/0">statistics/0</a></td><td>Show 
+execution statistics</td></tr>
+<tr><td><a class="pred" href="statistics.html#statistics/2">statistics/2</a></td><td>Obtain 
 collected statistics</td></tr>
 <tr><td><a class="pred" href="IO.html#stream_pair/3">stream_pair/3</a></td><td>Create/examine 
 a bi-directional stream</td></tr>
@@ -1552,21 +1510,19 @@ fields from stream position</td></tr>
 stream properties</td></tr>
 <tr><td><a class="pred" href="typetest.html#string/1">string/1</a></td><td>Type 
 check for string</td></tr>
-<tr><td><a class="pred" href="string.html#string_bytes/3">string_bytes/3</a></td><td>Translates 
-between text and bytes in encoding</td></tr>
-<tr><td><a class="pred" href="string.html#string_concat/3">string_concat/3</a></td><td><a id="idx:atomconcat3:2942"></a><a class="pred" href="manipatom.html#atom_concat/3">atom_concat/3</a> 
+<tr><td><a class="pred" href="strings.html#string_concat/3">string_concat/3</a></td><td><a id="idx:atomconcat3:2679"></a><a class="pred" href="manipatom.html#atom_concat/3">atom_concat/3</a> 
 for strings</td></tr>
-<tr><td><a class="pred" href="string.html#string_length/2">string_length/2</a></td><td>Determine 
+<tr><td><a class="pred" href="strings.html#string_length/2">string_length/2</a></td><td>Determine 
 length of a string</td></tr>
-<tr><td><a class="pred" href="string.html#string_chars/2">string_chars/2</a></td><td>Conversion 
+<tr><td><a class="pred" href="strings.html#string_chars/2">string_chars/2</a></td><td>Conversion 
 between string and list of characters</td></tr>
-<tr><td><a class="pred" href="string.html#string_codes/2">string_codes/2</a></td><td>Conversion 
+<tr><td><a class="pred" href="strings.html#string_codes/2">string_codes/2</a></td><td>Conversion 
 between string and list of character codes</td></tr>
-<tr><td><a class="pred" href="string.html#string_code/3">string_code/3</a></td><td>Get 
+<tr><td><a class="pred" href="strings.html#string_code/3">string_code/3</a></td><td>Get 
 or find a character code in a string</td></tr>
-<tr><td><a class="pred" href="string.html#string_lower/2">string_lower/2</a></td><td>Case 
+<tr><td><a class="pred" href="strings.html#string_lower/2">string_lower/2</a></td><td>Case 
 conversion to lower case</td></tr>
-<tr><td><a class="pred" href="string.html#string_upper/2">string_upper/2</a></td><td>Case 
+<tr><td><a class="pred" href="strings.html#string_upper/2">string_upper/2</a></td><td>Case 
 conversion to upper case</td></tr>
 <tr><td><a class="pred" href="check.html#string_predicate/1">string_predicate/1</a></td><td><i>(hook)</i> 
 Predicate contains strings</td></tr>
@@ -1578,7 +1534,7 @@ level of warnings</td></tr>
 a substring from an atom</td></tr>
 <tr><td><a class="pred" href="manipatom.html#sub_atom_icasechk/3">sub_atom_icasechk/3</a></td><td>Case 
 insensitive substring match</td></tr>
-<tr><td><a class="pred" href="string.html#sub_string/5">sub_string/5</a></td><td>Take 
+<tr><td><a class="pred" href="strings.html#sub_string/5">sub_string/5</a></td><td>Take 
 a substring from a string</td></tr>
 <tr><td><a class="pred" href="compare.html#subsumes_term/2">subsumes_term/2</a></td><td>One-sided 
 unification test</td></tr>
@@ -1595,7 +1551,7 @@ number of spaces on a stream</td></tr>
 <tr><td><a class="pred" href="tabling-preds.html#table/1">table/1</a></td><td>Declare 
 predicate to be tabled</td></tr>
 <tr><td><a class="pred" href="tabling-preds.html#tabled_call/1">tabled_call/1</a></td><td>Helper 
-for <a id="idx:notexists1:2943"></a><a class="pred" href="tabling-preds.html#not_exists/1">not_exists/1</a></td></tr>
+for <a id="idx:notexists1:2680"></a><a class="pred" href="tabling-preds.html#not_exists/1">not_exists/1</a></td></tr>
 <tr><td><a class="pred" href="thutil.html#tdebug/0">tdebug/0</a></td><td>Switch 
 all threads into debug mode</td></tr>
 <tr><td><a class="pred" href="thutil.html#tdebug/1">tdebug/1</a></td><td>Switch 
@@ -1610,9 +1566,9 @@ Convert term before compilation</td></tr>
 Convert term before compilation</td></tr>
 <tr><td><a class="pred" href="manipterm.html#term_singletons/2">term_singletons/2</a></td><td>Find 
 singleton variables in a term</td></tr>
-<tr><td><a class="pred" href="string.html#term_string/2">term_string/2</a></td><td>Read/write 
+<tr><td><a class="pred" href="strings.html#term_string/2">term_string/2</a></td><td>Read/write 
 a term from/to a string</td></tr>
-<tr><td><a class="pred" href="string.html#term_string/3">term_string/3</a></td><td>Read/write 
+<tr><td><a class="pred" href="strings.html#term_string/3">term_string/3</a></td><td>Read/write 
 a term from/to a string</td></tr>
 <tr><td><a class="pred" href="compare.html#term_subsumer/3">term_subsumer/3</a></td><td>Most 
 specific generalization of two terms</td></tr>
@@ -1649,7 +1605,7 @@ for Prolog task-completion</td></tr>
 <tr><td><a class="pred" href="threadcom.html#thread_local/1">thread_local/1</a></td><td>Declare 
 thread-specific clauses for a predicate</td></tr>
 <tr><td><a class="pred" href="printmsg.html#thread_message_hook/3">thread_message_hook/3</a></td><td>Thread 
-local <a id="idx:messagehook3:2944"></a><a class="pred" href="printmsg.html#message_hook/3">message_hook/3</a></td></tr>
+local <a id="idx:messagehook3:2681"></a><a class="pred" href="printmsg.html#message_hook/3">message_hook/3</a></td></tr>
 <tr><td><a class="pred" href="threadcom.html#thread_peek_message/1">thread_peek_message/1</a></td><td>Test 
 for message</td></tr>
 <tr><td><a class="pred" href="threadcom.html#thread_peek_message/2">thread_peek_message/2</a></td><td>Test 
@@ -1668,14 +1624,10 @@ of active threads</td></tr>
 goal in another thread</td></tr>
 <tr><td><a class="pred" href="thmonitor.html#thread_statistics/3">thread_statistics/3</a></td><td>Get 
 statistics of another thread</td></tr>
-<tr><td><a class="pred" href="threadcom.html#thread_update/2">thread_update/2</a></td><td>Update 
-a module and signal waiters</td></tr>
-<tr><td><a class="pred" href="threadcom.html#thread_wait/2">thread_wait/2</a></td><td>Wait 
-for a goal to become true</td></tr>
 <tr><td><a class="pred" href="thutil.html#threads/0">threads/0</a></td><td>List 
 running threads</td></tr>
 <tr><td><a class="pred" href="exception.html#throw/1">throw/1</a></td><td>Raise 
-an exception (see <a id="idx:catch3:2945"></a><a class="pred" href="exception.html#catch/3">catch/3</a>)</td></tr>
+an exception (see <a id="idx:catch3:2682"></a><a class="pred" href="exception.html#catch/3">catch/3</a>)</td></tr>
 <tr><td><a class="pred" href="statistics.html#time/1">time/1</a></td><td>Determine 
 time needed to execute goal</td></tr>
 <tr><td><a class="pred" href="files.html#time_file/2">time_file/2</a></td><td>Get 
@@ -1702,14 +1654,6 @@ trace point on predicate</td></tr>
 trace point on ports</td></tr>
 <tr><td><a class="pred" href="debugger.html#tracing/0">tracing/0</a></td><td>Query 
 status of the tracer</td></tr>
-<tr><td><a class="pred" href="db.html#transaction/1">transaction/1</a></td><td>Run 
-goal in a transaction</td></tr>
-<tr><td><a class="pred" href="db.html#transaction/2">transaction/2</a></td><td>Run 
-goal in a transaction</td></tr>
-<tr><td><a class="pred" href="db.html#transaction/3">transaction/3</a></td><td>Run 
-goal in a transaction</td></tr>
-<tr><td><a class="pred" href="db.html#transaction_updates/1">transaction_updates/1</a></td><td>Updates 
-to be committed in a transaction</td></tr>
 <tr><td><a class="pred" href="db.html#trie_delete/3">trie_delete/3</a></td><td>Remove 
 term from trie</td></tr>
 <tr><td><a class="pred" href="db.html#trie_destroy/1">trie_destroy/1</a></td><td>Destroy 
@@ -1736,10 +1680,8 @@ a trie's properties</td></tr>
 associated value in trie</td></tr>
 <tr><td><a class="pred" href="db.html#trie_term/2">trie_term/2</a></td><td>Get 
 term from a trie by handle</td></tr>
-<tr><td><a class="pred" href="memory.html#trim_heap/0">trim_heap/0</a></td><td>Release 
-unused malloc() resources</td></tr>
 <tr><td><a class="pred" href="memory.html#trim_stacks/0">trim_stacks/0</a></td><td>Release 
-unused stack resources</td></tr>
+unused memory resources</td></tr>
 <tr><td><span class="pred-ext">tripwire/2</span></td><td><i>(hook)</i> 
 Handle a tabling tripwire event</td></tr>
 <tr><td><a class="pred" href="control.html#true/0">true/0</a></td><td>Succeed</td></tr>
@@ -1759,8 +1701,6 @@ row/column size of the terminal</td></tr>
 output on terminal</td></tr>
 <tr><td><a class="pred" href="WFS.html#undefined/0">undefined/0</a></td><td>Well 
 Founded Semantics: true nor false</td></tr>
-<tr><td><a class="pred" href="metacall.html#undo/1">undo/1</a></td><td>Schedule 
-goal for backtracking</td></tr>
 <tr><td><a class="pred" href="compare.html#unify_with_occurs_check/2">unify_with_occurs_check/2</a></td><td>Logically 
 sound unification</td></tr>
 <tr><td><a class="pred" href="compare.html#unifiable/3">unifiable/3</a></td><td>Determining 
@@ -1831,16 +1771,12 @@ get special folder by CSIDL</td></tr>
 add menu</td></tr>
 <tr><td><a class="pred" href="system.html#win_insert_menu_item/4">win_insert_menu_item/4</a></td><td>swipl-win.exe: 
 add item to menu</td></tr>
-<tr><td><a class="pred" href="system.html#win_process_modules/1">win_process_modules/1</a></td><td>Win32 
-get .exe and .dll files of the process</td></tr>
 <tr><td><a class="pred" href="system.html#win_shell/2">win_shell/2</a></td><td>Win32: 
 open document through Shell</td></tr>
 <tr><td><a class="pred" href="system.html#win_shell/3">win_shell/3</a></td><td>Win32: 
 open document through Shell</td></tr>
 <tr><td><a class="pred" href="system.html#win_registry_get_value/3">win_registry_get_value/3</a></td><td>Win32: 
 get registry value</td></tr>
-<tr><td><a class="pred" href="system.html#win_get_user_preferred_ui_languages/2">win_get_user_preferred_ui_languages/2</a></td><td>Win32: 
-get language preferences</td></tr>
 <tr><td><a class="pred" href="system.html#win_window_color/2">win_window_color/2</a></td><td>Win32: 
 change colors of console window</td></tr>
 <tr><td><a class="pred" href="system.html#win_window_pos/1">win_window_pos/1</a></td><td>Win32: 

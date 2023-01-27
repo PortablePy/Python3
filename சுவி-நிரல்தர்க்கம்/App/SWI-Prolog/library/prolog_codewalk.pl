@@ -101,9 +101,7 @@ source file is passed into _Where.
                        trace_reference(any),
                        trace_condition(callable),
                        on_trace(callable),
-                       on_edge(callable),
                        infer_meta_predicates(oneof([false,true,all])),
-                       walk_meta_predicates(boolean),
                        evaluate(boolean),
                        verbose(boolean)
                      ]).
@@ -116,11 +114,9 @@ source file is passed into _Where.
                 module_class:list(oneof([user,system,library,
                                          test,development]))=[user,library],
                 infer_meta_predicates:oneof([false,true,all])=true,
-                walk_meta_predicates:boolean=true,
                 clauses:list,               % Walk only these clauses
                 trace_reference:any=(-),
                 trace_condition:callable,   % Call-back condition
-                on_edge:callable,           % Call-back on trace hits
                 on_trace:callable,          % Call-back on trace hits
                                             % private stuff
                 clause,                     % Processed clause
@@ -177,11 +173,6 @@ source file is passed into _Where.
 %     callable argument.  If =all=, it will be restarted until no
 %     more new meta-predicates can be found.
 %
-%     * walk_meta_predicates(Boolean)
-%     When `false` (default `true`), do not analyse the arguments
-%     of meta predicates.  Standard Prolog control structures are
-%     always analysed.
-%
 %     * trace_reference(Callable)
 %     Print all calls to goals that subsume Callable. Goals are
 %     represented as Module:Callable (i.e., they are always
@@ -204,21 +195,9 @@ source file is passed into _Where.
 %         If we are processing an initialization/1 directive, a term
 %         `File:Line` representing the location of the declaration.
 %
-%     * on_edge(:OnEdge)
-%     If a reference to `trace_reference` is found, call
-%     call(OnEdge, Callee, Caller, Location), where `Location` is a
-%     dict containing a subset of the keys `clause`, `file`,
-%     `character_count`, `line_count` and `line_position`.  If
-%     full position information is available all keys are present.
-%     If the clause layout is unknown the only the `clause`, `file`
-%     and `line_count` are available and the line is the start line
-%     of the clause.  For a dynamic clause, only the `clause` is
-%     present.  If the position is associated to a _directive_,
-%     the `clause` is missing.   If nothing is known the `Location`
-%     is an empty dict.
-%
 %     * on_trace(:OnTrace)
-%     As `on_edge`, but location is not translated and is one
+%     If a reference to =trace_reference= is found, call
+%     call(OnTrace, Callee, Caller, Location), where Location is one
 %     of these:
 %
 %       - clause_term_position(+ClauseRef, +TermPos)
@@ -231,7 +210,7 @@ source file is passed into _Where.
 %     atom '<initialization>'.
 %
 %     * source(+Boolean)
-%     If `false` (default `true`), to not try to obtain detailed
+%     If =false= (default =true=), to not try to obtain detailed
 %     source information for printed messages.
 %
 %     * verbose(+Boolean)
@@ -251,8 +230,7 @@ prolog_walk_code(Iteration, Options) :-
     (   walk_option_clauses(OTerm, Clauses),
         nonvar(Clauses)
     ->  walk_clauses(Clauses, OTerm)
-    ;   forall(( walk_option_module(OTerm, M0),
-                 copy_term(M0, M),
+    ;   forall(( walk_option_module(OTerm, M),
                  current_module(M),
                  scan_module(M, OTerm)
                ),
@@ -275,7 +253,6 @@ prolog_walk_code(Iteration, Options) :-
     ;   true
     ).
 
-is_meta(on_edge).
 is_meta(on_trace).
 is_meta(trace_condition).
 
@@ -326,8 +303,7 @@ walk_from_initialization(OTerm) :-
              walk_from_initialization(Goal, OTerm))).
 
 init_goal_in_scope(Goal, SourceLocation, OTerm) :-
-    '$init_goal'(_When, Goal, SourceLocation),
-    SourceLocation = File:_Line,
+    '$init_goal'(File, Goal, SourceLocation),
     (   walk_option_module(OTerm, M),
         nonvar(M)
     ->  module_property(M, file(File))
@@ -575,7 +551,6 @@ walk_called(Goal, M, TermPos, OTerm) :-
     !,
     walk_called_by(Called, M, Goal, TermPos, OTerm).
 walk_called(Meta, M, term_position(_,E,_,_,ArgPosList), OTerm) :-
-    walk_option_walk_meta_predicates(OTerm, true),
     (   walk_option_autoload(OTerm, false)
     ->  nonvar(M),
         '$get_predicate_attribute'(M:Meta, defined, 1)
@@ -689,7 +664,7 @@ not_callable(Goal, TermPos, OTerm) :-
 %
 %   Print a reference to Goal, found at TermPos.
 %
-%   @arg Why is one of `trace` or `undefined`
+%   @param Why is one of =trace= or =undefined=
 
 print_reference(Goal, TermPos, Why, OTerm) :-
     walk_option_clause(OTerm, Clause), nonvar(Clause),
@@ -723,16 +698,9 @@ print_reference(Goal, _, Why, OTerm) :-
 
 print_reference2(Goal, From, trace, OTerm) :-
     walk_option_on_trace(OTerm, Closure),
-    nonvar(Closure),
     walk_option_caller(OTerm, Caller),
+    nonvar(Closure),
     call(Closure, Goal, Caller, From),
-    !.
-print_reference2(Goal, From, trace, OTerm) :-
-    walk_option_on_edge(OTerm, Closure),
-    nonvar(Closure),
-    walk_option_caller(OTerm, Caller),
-    translate_location(From, Dict),
-    call(Closure, Goal, Caller, Dict),
     !.
 print_reference2(Goal, From, Why, _OTerm) :-
     make_message(Why, Goal, From, Message, Level),
@@ -1145,39 +1113,6 @@ initialization_clause(ClauseRef, OTerm) :-
     scan_module(M, OTerm).
 
 
-%!  translate_location(+Loc, -Dict) is det.
-
-translate_location(clause_term_position(ClauseRef, TermPos), Dict),
-    clause_property(ClauseRef, file(File)) =>
-    arg(1, TermPos, CharCount),
-    filepos_line(File, CharCount, Line, LinePos),
-    Dict = _{ clause: ClauseRef,
-              file: File,
-              character_count: CharCount,
-              line_count: Line,
-              line_position: LinePos
-            }.
-translate_location(clause(ClauseRef), Dict),
-    clause_property(ClauseRef, file(File)),
-    clause_property(ClauseRef, line_count(Line)) =>
-    Dict = _{ clause: ClauseRef,
-              file: File,
-              line_count: Line
-            }.
-translate_location(clause(ClauseRef), Dict) =>
-    Dict = _{ clause: ClauseRef
-            }.
-translate_location(file_term_position(Path, TermPos), Dict) =>
-    arg(1, TermPos, CharCount),
-    filepos_line(Path, CharCount, Line, LinePos),
-    Dict = _{ file: Path,
-              character_count: CharCount,
-              line_count: Line,
-              line_position: LinePos
-            }.
-translate_location(Var, Dict), var(Var) =>
-    Dict = _{}.
-
                  /*******************************
                  *            MESSAGES          *
                  *******************************/
@@ -1198,7 +1133,7 @@ prolog:message_location(clause(ClauseRef)) -->
       clause_property(ClauseRef, line_count(Line))
     },
     !,
-    [ url(File:Line), ': ' ].
+    [ '~w:~d: '-[File, Line] ].
 prolog:message_location(clause(ClauseRef)) -->
     { clause_name(ClauseRef, Name) },
     [ '~w: '-[Name] ].
@@ -1219,12 +1154,12 @@ message_location_file_term_position(File, TermPos) -->
     { arg(1, TermPos, CharCount),
       filepos_line(File, CharCount, Line, LinePos)
     },
-    [ url(File:Line:LinePos), ': ' ].
+    [ '~w:~d:~d: '-[File, Line, LinePos] ].
 
 %!  filepos_line(+File, +CharPos, -Line, -Column) is det.
 %
-%   @arg CharPos is 0-based character offset in the file.
-%   @arg Column is the current column, counting tabs as 8 spaces.
+%   @param CharPos is 0-based character offset in the file.
+%   @param Column is the current column, counting tabs as 8 spaces.
 
 filepos_line(File, CharPos, Line, LinePos) :-
     setup_call_cleanup(

@@ -3,10 +3,9 @@
     Author:        Jan Wielemaker, Matt Lilley
     E-mail:        J.Wielemaker@cs.vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2006-2020, University of Amsterdam
+    Copyright (c)  2006-2019, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
-                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -69,7 +68,6 @@
 :- use_module(library(broadcast)).
 :- use_module(library(lists)).
 :- use_module(library(time)).
-:- use_module(library(option)).
 
 :- predicate_options(http_open_session/2, 2, [renew(boolean)]).
 
@@ -115,12 +113,7 @@ change in future versions of this library.
     last_used/2,                    % SessionId, Time
     session_data/2.                 % SessionId, Data
 
-:- multifile
-    hooked/0,
-    hook/1,                         % +Term
-    session_option/2.
-
-session_setting(timeout(600)).      % timeout in seconds
+session_setting(timeout(600)).          % timeout in seconds
 session_setting(cookie('swipl_session')).
 session_setting(path(/)).
 session_setting(enabled(true)).
@@ -193,17 +186,6 @@ session_option(samesite, oneof([none,lax,strict])).
 %           with legitimage operations. `none` removes the samesite
 %           attribute entirely. __Caution: The value `none` exposes the
 %           entire site to CSRF attacks.__
-%
-%   In addition, extension libraries can define session_option/2 to make
-%   this   predicate   support    more     options.    In    particular,
-%   library(http/http_redis_plugin)  defines  the  following  additional
-%   options:
-%
-%     - redis_db(+DB)
-%       Alias name of the redis database to access.  See redis_server/3.
-%     - redis_prefix(+Atom)
-%       Prefix to use for all HTTP session related keys.  Default is
-%       `'swipl:http:session'`
 
 http_set_session_options([]).
 http_set_session_options([H|T]) :-
@@ -240,26 +222,15 @@ http_session_option(Option) :-
 %   Find setting for SessionID. It  is   possible  to  overrule some
 %   session settings using http_session_set(Setting).
 
-:- public session_setting/2.
-
-session_setting(SessionID, Setting) :-
+session_setting(SessionId, Setting) :-
     nonvar(Setting),
-    get_session_option(SessionID, Setting),
-    !.
-session_setting(_, Setting) :-
-    session_setting(Setting).
-
-get_session_option(SessionID, Setting) :-
-    hooked,
-    !,
-    hook(get_session_option(SessionID, Setting)).
-get_session_option(SessionID, Setting) :-
     functor(Setting, Name, 1),
     local_option(Name, Value, Term),
-    session_data(SessionID, '$setting'(Term)),
+    session_data(SessionId, '$setting'(Term)),
     !,
     arg(1, Setting, Value).
-
+session_setting(_, Setting) :-
+    session_setting(Setting).
 
 updated_session_setting(gc, _, passive) :-
     stop_session_gc_thread, !.
@@ -280,7 +251,7 @@ http_set_session(Setting) :-
     http_set_session(SessionId, Setting).
 
 http_set_session(SessionId, Setting) :-
-    functor(Setting, Name, _),
+    functor(Setting, Name, Arity),
     (   local_option(Name, _, _)
     ->  true
     ;   permission_error(set, http_session, Setting)
@@ -290,14 +261,6 @@ http_set_session(SessionId, Setting) :-
     ->  must_be(Type, Value)
     ;   domain_error(http_session_option, Setting)
     ),
-    set_session_option(SessionId, Setting).
-
-set_session_option(SessionId, Setting) :-
-    hooked,
-    !,
-    hook(set_session_option(SessionId, Setting)).
-set_session_option(SessionId, Setting) :-
-    functor(Setting, Name, Arity),
     functor(Free, Name, Arity),
     retractall(session_data(SessionId, '$setting'(Free))),
     assert(session_data(SessionId, '$setting'(Setting))).
@@ -308,7 +271,7 @@ local_option(timeout, X, timeout(X)).
 %
 %   True if SessionId is an identifier for the current session.
 %
-%   @arg   SessionId is an atom.
+%   @param SessionId is an atom.
 %   @error existence_error(http_session, _)
 %   @see   http_in_session/1 for a version that fails if there is
 %          no session.
@@ -475,18 +438,12 @@ peer(Request, Peer) :-
 %   http_session(begin(SessionID, Peer)).
 
 open_session(SessionID, Peer) :-
-    assert_session(SessionID, Peer),
+    get_time(Now),
+    assert(current_session(SessionID, Peer)),
+    assert(last_used(SessionID, Now)),
     b_setval(http_session_id, SessionID),
     broadcast(http_session(begin(SessionID, Peer))).
 
-assert_session(SessionID, Peer) :-
-    hooked,
-    !,
-    hook(assert_session(SessionID, Peer)).
-assert_session(SessionID, Peer) :-
-    get_time(Now),
-    assert(current_session(SessionID, Peer)),
-    assert(last_used(SessionID, Now)).
 
 %!  valid_session_id(+SessionID, +Peer) is semidet.
 %
@@ -494,11 +451,12 @@ assert_session(SessionID, Peer) :-
 %   update the last_used for this session.
 
 valid_session_id(SessionID, Peer) :-
-    active_session(SessionID, SessionPeer, LastUsed),
+    current_session(SessionID, SessionPeer),
     get_time(Now),
     (   session_setting(SessionID, timeout(Timeout)),
         Timeout > 0
-    ->  Idle is Now - LastUsed,
+    ->  get_last_used(SessionID, Last),
+        Idle is Now - Last,
         (   Idle =< Timeout
         ->  true
         ;   http_close_session(SessionID),
@@ -510,14 +468,6 @@ valid_session_id(SessionID, Peer) :-
     ;   true
     ),
     set_last_used(SessionID, Now, Timeout).
-
-active_session(SessionID, Peer, LastUsed) :-
-    hooked,
-    !,
-    hook(active_session(SessionID, Peer, LastUsed)).
-active_session(SessionID, Peer, LastUsed) :-
-    current_session(SessionID, Peer),
-    get_last_used(SessionID, LastUsed).
 
 get_last_used(SessionID, Last) :-
     atom(SessionID),
@@ -532,10 +482,6 @@ get_last_used(SessionID, Last) :-
 %   The time is rounded down  to  10   second  intervals  to  avoid many
 %   updates and simplify the scheduling of session GC.
 
-set_last_used(SessionID, Now, TimeOut) :-
-    hooked,
-    !,
-    hook(set_last_used(SessionID, Now, TimeOut)).
 set_last_used(SessionID, Now, TimeOut) :-
     LastUsed is floor(Now/10)*10,
     (   clause(last_used(SessionID, CurrentLast), _, Ref)
@@ -564,31 +510,19 @@ set_last_used(SessionID, Now, TimeOut) :-
 
 http_session_asserta(Data) :-
     http_session_id(SessionId),
-    (   hooked
-    ->  hook(asserta(session_data(SessionId, Data)))
-    ;   asserta(session_data(SessionId, Data))
-    ).
+    asserta(session_data(SessionId, Data)).
 
 http_session_assert(Data) :-
     http_session_id(SessionId),
-    (   hooked
-    ->  hook(assertz(session_data(SessionId, Data)))
-    ;   assertz(session_data(SessionId, Data))
-    ).
+    assert(session_data(SessionId, Data)).
 
 http_session_retract(Data) :-
     http_session_id(SessionId),
-    (   hooked
-    ->  hook(retract(session_data(SessionId, Data)))
-    ;   retract(session_data(SessionId, Data))
-    ).
+    retract(session_data(SessionId, Data)).
 
 http_session_retractall(Data) :-
     http_session_id(SessionId),
-    (   hooked
-    ->  hook(retractall(session_data(SessionId, Data)))
-    ;   retractall(session_data(SessionId, Data))
-    ).
+    retractall(session_data(SessionId, Data)).
 
 %!  http_session_data(?Data) is nondet.
 %
@@ -599,10 +533,7 @@ http_session_retractall(Data) :-
 
 http_session_data(Data) :-
     http_session_id(SessionId),
-    (   hooked
-    ->  hook(session_data(SessionId, Data))
-    ;   session_data(SessionId, Data)
-    ).
+    session_data(SessionId, Data).
 
 %!  http_session_asserta(+Data, +SessionID) is det.
 %!  http_session_assert(+Data, +SessionID) is det.
@@ -617,38 +548,24 @@ http_session_data(Data) :-
 
 http_session_asserta(Data, SessionId) :-
     must_be(atom, SessionId),
-    (   hooked
-    ->  hook(asserta(session_data(SessionId, Data)))
-    ;   asserta(session_data(SessionId, Data))
-    ).
+    asserta(session_data(SessionId, Data)).
 
 http_session_assert(Data, SessionId) :-
     must_be(atom, SessionId),
-    (   hooked
-    ->  hook(assertz(session_data(SessionId, Data)))
-    ;   assertz(session_data(SessionId, Data))
-    ).
+    assert(session_data(SessionId, Data)).
 
 http_session_retract(Data, SessionId) :-
     must_be(atom, SessionId),
-    (   hooked
-    ->  hook(retract(session_data(SessionId, Data)))
-    ;   retract(session_data(SessionId, Data))
-    ).
+    retract(session_data(SessionId, Data)).
 
 http_session_retractall(Data, SessionId) :-
     must_be(atom, SessionId),
-    (   hooked
-    ->  hook(retractall(session_data(SessionId, Data)))
-    ;   retractall(session_data(SessionId, Data))
-    ).
+    retractall(session_data(SessionId, Data)).
 
 http_session_data(Data, SessionId) :-
     must_be(atom, SessionId),
-    (   hooked
-    ->  hook(session_data(SessionId, Data))
-    ;   session_data(SessionId, Data)
-    ).
+    session_data(SessionId, Data).
+
 
 
                  /*******************************
@@ -658,7 +575,7 @@ http_session_data(Data, SessionId) :-
 %!  http_current_session(?SessionID, ?Data) is nondet.
 %
 %   Enumerate the current sessions and   associated data.  There are
-%   two _pseudo_ data elements:
+%   two _Pseudo_ data elements:
 %
 %           * idle(Seconds)
 %           Session has been idle for Seconds.
@@ -666,10 +583,6 @@ http_session_data(Data, SessionId) :-
 %           * peer(Peer)
 %           Peer of the connection.
 
-http_current_session(SessionID, Data) :-
-    hooked,
-    !,
-    hook(current_session(SessionID, Data)).
 http_current_session(SessionID, Data) :-
     get_time(Now),
     get_last_used(SessionID, Last), % binds SessionID
@@ -727,11 +640,6 @@ http_close_session(SessionId) :-
     http_close_session(SessionId, true).
 
 http_close_session(SessionId, Expire) :-
-    hooked,
-    !,
-    forall(hook(close_session(SessionId)),
-           expire_session_cookie(Expire)).
-http_close_session(SessionId, Expire) :-
     must_be(atom, SessionId),
     (   current_session(SessionId, Peer),
         (   b_setval(http_session_id, SessionId),
@@ -739,7 +647,10 @@ http_close_session(SessionId, Expire) :-
             fail
         ;   true
         ),
-        expire_session_cookie(Expire),
+        (   Expire == true
+        ->  expire_session_cookie
+        ;   true
+        ),
         retractall(current_session(SessionId, _)),
         retractall(last_used(SessionId, _)),
         retractall(session_data(SessionId, _)),
@@ -748,15 +659,10 @@ http_close_session(SessionId, Expire) :-
     ).
 
 
-%!  expire_session_cookie(+Expire) is det.
+%!  expire_session_cookie(+SessionId) is det.
 %
 %   Emit a request to delete a session  cookie. This is only done if
 %   http_close_session/1 is still in `header mode'.
-
-expire_session_cookie(true) :-
-    !,
-    expire_session_cookie.
-expire_session_cookie(_).
 
 expire_session_cookie :-
     in_header_state,
@@ -805,14 +711,10 @@ need_sesion_gc(TimeOut) :-
     ).
 
 do_http_gc_sessions :-
-    hooked,
-    !,
-    hook(gc_sessions).
-do_http_gc_sessions :-
     debug(http_session(gc), 'Running HTTP session GC', []),
     get_time(Now),
-    (   session_setting(SessionID, timeout(Timeout)),
-        last_used(SessionID, Last),
+    (   last_used(SessionID, Last),
+        session_setting(SessionID, timeout(Timeout)),
         Timeout > 0,
         Idle is Now - Last,
         Idle > Timeout,
@@ -987,11 +889,3 @@ random_4(R1,R2,R3,R4) :-
     R2 is random(65536),
     R3 is random(65536),
     R4 is random(65536).
-
-%!  hooked is semidet.
-%!  hook(+Goal).
-%
-%   These multifile predicates may be used to   hook the data storage of
-%   this     library.     An     example       is     implemented     by
-%   library(http/http_redis_plugin), storing all session data in a redis
-%   database.

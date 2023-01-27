@@ -2,7 +2,7 @@
 
     Author:        Jan Wielemaker and Anjo Anjewierden
     E-mail:        J.Wielemaker@cs.vu.nl
-    WWW:           http://www.swi-prolog.org/packages/xpce/
+    WWW:           http://www.swi-prolog.org/projects/xpce/
     Copyright (c)  1985-2011, University of Amsterdam
                               VU University Amsterdam
     All rights reserved.
@@ -117,8 +117,6 @@ make_message(Lines, String) :-
     !,
     new(String, string(Chars)).
 
-% TBD: Sync with elements_to_string/2 in prolog_mode.pl
-
 make_message([]) -->
     [].
 make_message([nl|T]) -->
@@ -134,21 +132,6 @@ make_message([ansi(_Attrs, Fmt, Args)|T]) -->
     !,
     { format(codes(Codes, Tail), Fmt, Args)
     },
-    dlist(Codes, Tail),
-    make_message(T).
-make_message([url(File:Line:Pos)|T]) -->
-    !,
-    { format(codes(Codes, Tail), '~w:~w:~w', [File, Line, Pos]) },
-    dlist(Codes, Tail),
-    make_message(T).
-make_message([url(File:Line)|T]) -->
-    !,
-    { format(codes(Codes, Tail), '~w:~w', [File, Line]) },
-    dlist(Codes, Tail),
-    make_message(T).
-make_message([url(File)|T]) -->
-    !,
-    { format(codes(Codes, Tail), '~w', [File]) },
     dlist(Codes, Tail),
     make_message(T).
 make_message([Skip|T]) -->

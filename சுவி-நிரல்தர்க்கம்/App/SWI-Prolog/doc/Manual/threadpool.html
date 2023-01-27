@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 9.0.4 Reference Manual: Section A.55</title><link rel="home" href="index.html">
+<title>SWI-Prolog 8.2.4 Reference Manual: Section A.46</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -233,7 +233,7 @@ table.frame-box
 <a class="nav" href="thread.html"><img src="prev.gif" alt="Previous"></a>
 <a class="nav" href="ugraphs.html"><img src="next.gif" alt="Next"></a>
 </div>
-<h2 id="sec:threadpool"><a id="sec:A.55"><span class="sec-nr">A.55</span> <span class="sec-title">library(thread_pool): 
+<h2 id="sec:threadpool"><a id="sec:A.46"><span class="sec-nr">A.46</span> <span class="sec-title">library(thread_pool): 
 Resource bounded thread management</span></a></h2>
 
 <p><a id="sec:threadpool"></a>
@@ -377,21 +377,6 @@ of the pool completes. If <code>false</code>, throw a resource_error.
 is <code>false</code> or the backlog limit has been reached. <br>
 - <code>existence_error(thread_pool, Pool)</code> if <var>Pool</var> 
 does not exist.
-</dd>
-</dl>
-
-</dd>
-<dt class="pubdef"><a id="worker_exitted/3"><strong>worker_exitted</strong>(<var>+PoolName, 
-+WorkerId, :AtExit</var>)</a></dt>
-<dd class="defbody">
-It is possible that&rsquo;__thread_pool_manager' no longer exists while 
-closing down the process because the manager was killed before the 
-worker.
-
-<dl class="tags">
-<dt class="tag">To be done</dt>
-<dd>
-Find a way to discover that we are terminating Prolog.
 </dd>
 </dl>
 

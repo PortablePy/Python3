@@ -2,7 +2,7 @@
 
     Author:        Jan Wielemaker and Anjo Anjewierden
     E-mail:        J.Wielemaker@vu.nl
-    WWW:           http://www.swi-prolog.org/packages/xpce/
+    WWW:           http://www.swi-prolog.org/projects/xpce/
     Copyright (c)  2001-2016, University of Amsterdam
                               VU University Amsterdam
     All rights reserved.
@@ -81,7 +81,7 @@ user:prolog_trace_interception(Port, Frame, CHP, Action) :-
 
 prolog_trace_interception_gui(Port, Frame, CHP, Action) :-
     current_prolog_flag(gui_tracer, true),
-    (   '$notrace'(intercept(Port, Frame, CHP, GuiAction)),
+    (   notrace(intercept(Port, Frame, CHP, GuiAction)),
         map_action(GuiAction, Frame, Action)
     ->  true
     ;   print_message(warning,
@@ -549,7 +549,6 @@ clause_end(ClauseRef, File, CharA, CharZ) :-
     pce_clause_info(ClauseRef, File, TPos, _),
     nonvar(TPos),
     arg(2, TPos, CharA),
-    nonvar(CharA),
     CharZ is CharA + 1.
 
 head_pos(Ref, Pos, HPos) :-

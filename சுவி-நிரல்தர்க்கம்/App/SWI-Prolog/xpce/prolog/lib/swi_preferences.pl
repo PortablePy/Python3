@@ -38,9 +38,6 @@
           ]).
 :- use_module(library(pce)).
 :- use_module(library(pce_tick_box)).
-:- autoload(library(lists), [member/2]).
-:- autoload(library(pce_emacs), [start_emacs/0]).
-:- autoload(library(swi_compatibility), [auto_call/1]).
 
 /** <module> Edit preferences files
 
@@ -86,12 +83,16 @@ locate_preferences(xpce, File) :-
     get(string('%s/Defaults', Dir), value, File).
 locate_preferences(prolog, File) :-
     prolog_init_file(Base),
-    member(Access, [read,write]),
-    absolute_file_name(user_app_config(Base), File,
-                       [ access(Access),
-                         file_errors(fail)
-                       ]),
-    !.
+    (   absolute_file_name(user_profile(Base), File,
+                           [ access(read),
+                             file_errors(fail)
+                           ])
+    ->  true
+    ;   absolute_file_name(app_preferences(Base), File,
+                           [ access(write),
+                             file_errors(fail)
+                           ])
+    ).
 
 %!  prolog_init_file(-Base)
 %
@@ -106,7 +107,6 @@ prolog_init_file(Base) :-
 prolog_init_file(Base) :-
     '$option'(init_file, Base).
 :- endif.
-prolog_init_file('init.pl').
 
 
 %!  default_preferences(+Id, -File)

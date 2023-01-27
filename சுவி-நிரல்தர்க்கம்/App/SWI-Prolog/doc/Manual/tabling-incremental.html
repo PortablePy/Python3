@@ -2,12 +2,12 @@
 
 <html>
 <head>
-<title>SWI-Prolog 9.0.4 Reference Manual: Section 7.7</title><link rel="home" href="index.html">
+<title>SWI-Prolog 8.2.4 Reference Manual: Section 7.7</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
 <link rel="previous" href="WFS.html">
-<link rel="next" href="tabling-monotonic.html">
+<link rel="next" href="tabling-shared.html">
 
 <style type="text/css">
 
@@ -231,7 +231,7 @@ table.frame-box
 <a class="nav" href="DocIndex.html"><img src="yellow_pages.gif" alt="Index"></a>
 <a class="nav" href="summary.html"><img src="info.gif" alt="Summary"></a>
 <a class="nav" href="WFS.html"><img src="prev.gif" alt="Previous"></a>
-<a class="nav" href="tabling-monotonic.html"><img src="next.gif" alt="Next"></a>
+<a class="nav" href="tabling-shared.html"><img src="next.gif" alt="Next"></a>
 </div>
 <h2 id="sec:tabling-incremental"><a id="sec:7.7"><span class="sec-nr">7.7</span> <span class="sec-title">Incremental 
 tabling</span></a></h2>
@@ -241,13 +241,13 @@ tabling</span></a></h2>
 <p>Incremental tabling maintains the consistency of a set of tabled 
 predicates that depend on a set of dynamic predicates. Both the tabled 
 and dynamic predicates must have the property <code>incremental</code> 
-set. See <a id="idx:dynamic1:2112"></a><a class="pred" href="dynamic.html#dynamic/1">dynamic/1</a> 
-and <a id="idx:table1:2113"></a><a class="pred" href="tabling-preds.html#table/1">table/1</a>.
+set. See <a id="idx:dynamic1:1974"></a><a class="pred" href="dynamic.html#dynamic/1">dynamic/1</a> 
+and <a id="idx:table1:1975"></a><a class="pred" href="tabling-preds.html#table/1">table/1</a>.
 
 <p>Incremental tabling causes the engine to connect the <em>answer tries</em> 
 and incremental dynamic predicates in an <em>Incremental Dependency 
-Graph</em> (IDG). Modifications (<a id="idx:asserta1:2114"></a><a class="pred" href="db.html#asserta/1">asserta/1</a>, <a id="idx:retract1:2115"></a><a class="pred" href="db.html#retract/1">retract/1</a>,
-<a id="idx:retractall1:2116"></a><a class="pred" href="db.html#retractall/1">retractall/1</a> 
+Graph</em> (IDG). Modifications (<a id="idx:asserta1:1976"></a><a class="pred" href="db.html#asserta/1">asserta/1</a>, <a id="idx:retract1:1977"></a><a class="pred" href="db.html#retract/1">retract/1</a>,
+<a id="idx:retractall1:1978"></a><a class="pred" href="db.html#retractall/1">retractall/1</a> 
 and friends) of an incremental dynamic predicate mark all depending 
 tables as invalid. Subsequent usage of these tables forces 
 re-evaluation.

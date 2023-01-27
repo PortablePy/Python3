@@ -1,4 +1,6 @@
-/*  Part of CLP(Q,R) (Constraint Logic Programming over Rationals and Reals)
+/*
+
+    Part of CLP(Q,R) (Constraint Logic Programming over Rationals and Reals)
 
     Author:        Leslie De Koninck
     E-mail:        Leslie.DeKoninck@cs.kuleuven.be
@@ -35,7 +37,7 @@
     the GNU General Public License.
 */
 
-:- module(clpqr_redund,
+:- module(redund,
 	[
 	    redundancy_vars/1,
 	    systems/3
@@ -61,7 +63,7 @@
 systems([],Si,Si).
 systems([V|Vs],Si,So) :-
 	(   var(V),
-	    get_attr(V,clpqr_itf,Att),
+	    get_attr(V,itf,Att),
 	    arg(6,Att,class(C)),
 	    not_memq(Si,C)
 	->  systems(Vs,[C|Si],So)
@@ -76,6 +78,16 @@ not_memq([],_).
 not_memq([Y|Ys],X) :-
 	X \== Y,
 	not_memq(Ys,X).
+
+% redundancy_systems(Classes)
+%
+% Does redundancy removal via redundancy_vs/1 on all variables in the classes Classes.
+
+redundancy_systems([]).
+redundancy_systems([S|Sys]) :-
+	class_allvars(S,All),
+	redundancy_vs(All),
+	redundancy_systems(Sys).
 
 % redundancy_vars(Vs)
 %
@@ -102,7 +114,7 @@ redundancy_vs(Vs) :-
 	!.
 redundancy_vs([]).
 redundancy_vs([V|Vs]) :-
-	(   get_attr(V,clpqr_itf,Att),
+	(   get_attr(V,itf,Att),
 	    arg(2,Att,type(Type)),
 	    arg(3,Att,strictness(Strict)),
 	    redundant(Type,V,Strict)
@@ -118,21 +130,21 @@ redundancy_vs([V|Vs]) :-
 % doesn't necessarily mean a redundant bound.
 
 redundant(t_l(L),X,Strict) :-
-	get_attr(X,clpqr_itf,Att),
+	get_attr(X,itf,Att),
 	arg(1,Att,CLP),
 	detach_bounds(CLP,X),	% drop temporarily
 	% if not redundant, backtracking will restore bound
 	negate_l(Strict,CLP,L,X),
 	red_t_l.	% negate_l didn't fail, redundant bound
 redundant(t_u(U),X,Strict) :-
-	get_attr(X,clpqr_itf,Att),
+	get_attr(X,itf,Att),
 	arg(1,Att,CLP),
 	detach_bounds(CLP,X),
 	negate_u(Strict,CLP,U,X),
 	red_t_u.
 redundant(t_lu(L,U),X,Strict) :-
 	strictness_parts(Strict,Sl,Su),
-	(   get_attr(X,clpqr_itf,Att),
+	(   get_attr(X,itf,Att),
 	    arg(1,Att,CLP),
 	    setarg(2,Att,type(t_u(U))),
 	    setarg(3,Att,strictness(Su)),
@@ -142,7 +154,7 @@ redundant(t_lu(L,U),X,Strict) :-
 	    ->  true
 	    ;   true
 	    )
-	;   get_attr(X,clpqr_itf,Att),
+	;   get_attr(X,itf,Att),
 	    arg(1,Att,CLP),
 	    setarg(2,Att,type(t_l(L))),
 	    setarg(3,Att,strictness(Sl)),
@@ -151,7 +163,7 @@ redundant(t_lu(L,U),X,Strict) :-
 	;   true
 	).
 redundant(t_L(L),X,Strict) :-
-	get_attr(X,clpqr_itf,Att),
+	get_attr(X,itf,Att),
 	arg(1,Att,CLP),
 	Bound is -L,
 	intro_at(CLP,X,Bound,t_none),	% drop temporarily
@@ -159,7 +171,7 @@ redundant(t_L(L),X,Strict) :-
 	negate_l(Strict,CLP,L,X),
 	red_t_L.
 redundant(t_U(U),X,Strict) :-
-	get_attr(X,clpqr_itf,Att),
+	get_attr(X,itf,Att),
 	arg(1,Att,CLP),
 	Bound is -U,
 	intro_at(CLP,X,Bound,t_none),	% drop temporarily
@@ -169,10 +181,10 @@ redundant(t_U(U),X,Strict) :-
 redundant(t_Lu(L,U),X,Strict) :-
 	strictness_parts(Strict,Sl,Su),
 	(   Bound is -L,
-	    get_attr(X,clpqr_itf,Att),
+	    get_attr(X,itf,Att),
 	    arg(1,Att,CLP),
 	    intro_at(CLP,X,Bound,t_u(U)),
-	    get_attr(X,clpqr_itf,Att2), % changed?
+	    get_attr(X,itf,Att2), % changed?
 	    setarg(3,Att2,strictness(Su)),
 	    negate_l(Strict,CLP,L,X)
 	->  red_t_l,
@@ -180,7 +192,7 @@ redundant(t_Lu(L,U),X,Strict) :-
 	    ->  true
 	    ;   true
 	    )
-	;   get_attr(X,clpqr_itf,Att),
+	;   get_attr(X,itf,Att),
 	    arg(1,Att,CLP),
 	    setarg(2,Att,type(t_L(L))),
 	    setarg(3,Att,strictness(Sl)),
@@ -190,7 +202,7 @@ redundant(t_Lu(L,U),X,Strict) :-
 	).
 redundant(t_lU(L,U),X,Strict) :-
 	strictness_parts(Strict,Sl,Su),
-	(   get_attr(X,clpqr_itf,Att),
+	(   get_attr(X,itf,Att),
 	    arg(1,Att,CLP),
 	    setarg(2,Att,type(t_U(U))),
 	    setarg(3,Att,strictness(Su)),
@@ -200,11 +212,11 @@ redundant(t_lU(L,U),X,Strict) :-
 	    ->  true
 	    ;   true
 	    )
-	;   get_attr(X,clpqr_itf,Att),
+	;   get_attr(X,itf,Att),
 	    arg(1,Att,CLP),
 	    Bound is -U,
 	    intro_at(CLP,X,Bound,t_l(L)),
-	    get_attr(X,clpqr_itf,Att2), % changed?
+	    get_attr(X,itf,Att2), % changed?
 	    setarg(3,Att2,strictness(Sl)),
 	    negate_u(Strict,CLP,U,X)
 	->  red_t_u
