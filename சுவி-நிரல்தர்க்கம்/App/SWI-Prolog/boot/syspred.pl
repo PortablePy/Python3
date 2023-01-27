@@ -3,9 +3,10 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  1985-2020, University of Amsterdam
+    Copyright (c)  1985-2022, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
+                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -38,10 +39,6 @@
           [ leash/1,
             visible/1,
             style_check/1,
-            (spy)/1,
-            (nospy)/1,
-            nospyall/0,
-            debugging/0,
             flag/3,
             atom_prefix/2,
             dwim_match/2,
@@ -51,8 +48,6 @@
             unload_file/1,
             exists_source/1,                    % +Spec
             exists_source/2,                    % +Spec, -Path
-            use_foreign_library/1,		% :FileSpec
-            use_foreign_library/2,		% :FileSpec, +Install
             prolog_load_context/2,
             stream_position_data/3,
             current_predicate/2,
@@ -70,8 +65,6 @@
             shell/1,                            % +Command
             on_signal/3,
             current_signal/3,
-            open_shared_object/2,
-            open_shared_object/3,
             format/1,
             garbage_collect/0,
             set_prolog_stack/2,
@@ -80,11 +73,20 @@
             tmp_file_stream/3,                  % +Enc, -File, -Stream
             call_with_depth_limit/3,            % :Goal, +Limit, -Result
             call_with_inference_limit/3,        % :Goal, +Limit, -Result
+            rule/2,                             % :Head, -Rule
+            rule/3,                             % :Head, -Rule, ?Ref
             numbervars/3,                       % +Term, +Start, -End
             term_string/3,                      % ?Term, ?String, +Options
             nb_setval/2,                        % +Var, +Value
             thread_create/2,                    % :Goal, -Id
             thread_join/1,                      % +Id
+            sig_block/1,                        % :Pattern
+            sig_unblock/1,                      % :Pattern
+            transaction/1,                      % :Goal
+            transaction/2,                      % :Goal, +Options
+            transaction/3,                      % :Goal, :Constraint, +Mutex
+            snapshot/1,                         % :Goal
+            undo/1,                             % :Goal
             set_prolog_gc_thread/1,		% +Status
 
             '$wrap_predicate'/5                 % :Head, +Name, -Closure, -Wrapped, +Body
@@ -92,8 +94,13 @@
 
 :- meta_predicate
     dynamic(:, +),
-    use_foreign_library(:),
-    use_foreign_library(:, +).
+    transaction(0),
+    transaction(0,0,+),
+    snapshot(0),
+    rule(:, -),
+    rule(:, -, ?),
+    sig_block(:),
+    sig_unblock(:).
 
 
                 /********************************
@@ -193,109 +200,6 @@ enum_style_check(Style) :-
     style_name(Style, Bit),
     Bit /\ Bits =\= 0.
 
-
-%!  prolog:debug_control_hook(+Action)
-%
-%   Allow user-hooks in the Prolog debugger interaction.  See the calls
-%   below for the provided hooks.  We use a single predicate with action
-%   argument to avoid an uncontrolled poliferation of hooks.
-
-:- multifile
-    prolog:debug_control_hook/1.    % +Action
-
-:- meta_predicate
-    spy(:),
-    nospy(:).
-
-%!  spy(:Spec) is det.
-%!  nospy(:Spec) is det.
-%!  nospyall is det.
-%
-%   Set/clear spy-points. A successfully set or cleared spy-point is
-%   reported using print_message/2, level  =informational=, with one
-%   of the following terms, where Spec is of the form M:Head.
-%
-%       - spy(Spec)
-%       - nospy(Spec)
-%
-%   @see    spy/1 and nospy/1 call the hook prolog:debug_control_hook/1
-%           to allow for alternative specifications of the thing to
-%           debug.
-
-spy(_:X) :-
-    var(X),
-    throw(error(instantiation_error, _)).
-spy(_:[]) :- !.
-spy(M:[H|T]) :-
-    !,
-    spy(M:H),
-    spy(M:T).
-spy(Spec) :-
-    notrace(prolog:debug_control_hook(spy(Spec))),
-    !.
-spy(Spec) :-
-    '$find_predicate'(Spec, Preds),
-    '$member'(PI, Preds),
-        pi_to_head(PI, Head),
-        '$define_predicate'(Head),
-        '$spy'(Head),
-    fail.
-spy(_).
-
-nospy(_:X) :-
-    var(X),
-    throw(error(instantiation_error, _)).
-nospy(_:[]) :- !.
-nospy(M:[H|T]) :-
-    !,
-    nospy(M:H),
-    nospy(M:T).
-nospy(Spec) :-
-    notrace(prolog:debug_control_hook(nospy(Spec))),
-    !.
-nospy(Spec) :-
-    '$find_predicate'(Spec, Preds),
-    '$member'(PI, Preds),
-         pi_to_head(PI, Head),
-        '$nospy'(Head),
-    fail.
-nospy(_).
-
-nospyall :-
-    notrace(prolog:debug_control_hook(nospyall)),
-    fail.
-nospyall :-
-    spy_point(Head),
-        '$nospy'(Head),
-    fail.
-nospyall.
-
-pi_to_head(M:PI, M:Head) :-
-    !,
-    pi_to_head(PI, Head).
-pi_to_head(Name/Arity, Head) :-
-    functor(Head, Name, Arity).
-
-%!  debugging is det.
-%
-%   Report current status of the debugger.
-
-debugging :-
-    notrace(prolog:debug_control_hook(debugging)),
-    !.
-debugging :-
-    current_prolog_flag(debug, true),
-    !,
-    print_message(informational, debugging(on)),
-    findall(H, spy_point(H), SpyPoints),
-    print_message(informational, spying(SpyPoints)).
-debugging :-
-    print_message(informational, debugging(off)).
-
-spy_point(Module:Head) :-
-    current_predicate(_, Module:Head),
-    '$get_predicate_attribute'(Module:Head, spy, 1),
-    \+ predicate_property(Module:Head, imported_from(_)).
 
 %!  flag(+Name, -Old, +New) is det.
 %
@@ -467,12 +371,11 @@ canonical_source_file(Spec, File) :-
     !,
     File = Spec.
 canonical_source_file(Spec, File) :-
-    absolute_file_name(Spec,
-                           [ file_type(prolog),
-                             access(read),
-                             file_errors(fail)
-                           ],
-                           File),
+    absolute_file_name(Spec, File,
+                       [ file_type(prolog),
+                         access(read),
+                         file_errors(fail)
+                       ]),
     source_file(File).
 
 
@@ -540,7 +443,10 @@ prolog_load_context(script, Bool) :-
     ;   Bool = false
     ).
 prolog_load_context(variable_names, Bindings) :-
-    nb_current('$variable_names', Bindings).
+    (   nb_current('$variable_names', Bindings0)
+    ->  Bindings = Bindings0
+    ;   Bindings = []
+    ).
 prolog_load_context(term, Term) :-
     nb_current('$term', Term).
 prolog_load_context(reloading, true) :-
@@ -569,6 +475,51 @@ unload_file(File) :-
     ;   true
     ).
 
+:- if(current_prolog_flag(open_shared_object, true)).
+
+                 /*******************************
+                 *            DLOPEN            *
+                 *******************************/
+
+%!  open_shared_object(+File, -Handle) is det.
+%!  open_shared_object(+File, -Handle, +Flags) is det.
+%
+%   Open a shared object or DLL file. Flags  is a list of flags. The
+%   following flags are recognised. Note   however  that these flags
+%   may have no affect on the target platform.
+%
+%       * =now=
+%       Resolve all symbols in the file now instead of lazily.
+%       * =global=
+%       Make new symbols globally known.
+
+open_shared_object(File, Handle) :-
+    open_shared_object(File, Handle, []). % use pl-load.c defaults
+
+open_shared_object(File, Handle, Flags) :-
+    (   is_list(Flags)
+    ->  true
+    ;   throw(error(type_error(list, Flags), _))
+    ),
+    map_dlflags(Flags, Mask),
+    '$open_shared_object'(File, Handle, Mask).
+
+dlopen_flag(now,        2'01).          % see pl-load.c for these constants
+dlopen_flag(global,     2'10).          % Solaris only
+
+map_dlflags([], 0).
+map_dlflags([F|T], M) :-
+    map_dlflags(T, M0),
+    (   dlopen_flag(F, I)
+    ->  true
+    ;   throw(error(domain_error(dlopen_flag, F), _))
+    ),
+    M is M0 \/ I.
+
+:- export(open_shared_object/2).
+:- export(open_shared_object/3).
+
+
 		 /*******************************
 		 *      FOREIGN LIBRARIES	*
 		 *******************************/
@@ -590,9 +541,20 @@ unload_file(File) :-
 %   _immediately_. I.e. the  difference  is   only  relevant  if the
 %   remainder of the file uses functionality of the C-library.
 
+:- meta_predicate
+    use_foreign_library(:),
+    use_foreign_library(:, +).
+:- public
+    use_foreign_library_noi/1.
+
 use_foreign_library(FileSpec) :-
     ensure_shlib,
-    initialization(shlib:load_foreign_library(FileSpec), now).
+    initialization(use_foreign_library_noi(FileSpec), now).
+
+% noi -> no initialize; used by '$autoload':exports/3.
+use_foreign_library_noi(FileSpec) :-
+    ensure_shlib,
+    shlib:load_foreign_library(FileSpec).
 
 use_foreign_library(FileSpec, Entry) :-
     ensure_shlib,
@@ -605,6 +567,50 @@ ensure_shlib :-
 ensure_shlib :-
     use_module(library(shlib), []).
 
+:- export(use_foreign_library/1).
+:- export(use_foreign_library/2).
+
+:- elif(current_predicate('$activate_static_extension'/1)).
+
+% Version when using shared objects is disabled and extensions are added
+% as static libraries.
+
+:- meta_predicate
+    use_foreign_library(:).
+:- public
+    use_foreign_library_noi/1.
+:- dynamic
+    loading/1,
+    foreign_predicate/2.
+
+use_foreign_library(FileSpec) :-
+    initialization(use_foreign_library_noi(FileSpec), now).
+
+use_foreign_library_noi(Module:foreign(Extension)) :-
+    setup_call_cleanup(
+        asserta(loading(foreign(Extension)), Ref),
+        @('$activate_static_extension'(Extension), Module),
+        erase(Ref)).
+
+:- export(use_foreign_library/1).
+
+system:'$foreign_registered'(M, H) :-
+    (   loading(Lib)
+    ->  true
+    ;   Lib = '<spontaneous>'
+    ),
+    assert(foreign_predicate(Lib, M:H)).
+
+%!  current_foreign_library(?File, -Public)
+%
+%   Query currently loaded shared libraries.
+
+current_foreign_library(File, Public) :-
+    setof(Pred, foreign_predicate(File, Pred), Public).
+
+:- export(current_foreign_library/2).
+
+:- endif. /* open_shared_object support */
 
                  /*******************************
                  *            STREAMS           *
@@ -861,6 +867,8 @@ define_or_generate(Pred) :-
     '$get_predicate_attribute'(Pred, (thread_local), 1).
 '$predicate_property'((multifile), Pred) :-
     '$get_predicate_attribute'(Pred, (multifile), 1).
+'$predicate_property'((discontiguous), Pred) :-
+    '$get_predicate_attribute'(Pred, (discontiguous), 1).
 '$predicate_property'(imported_from(Module), Pred) :-
     '$get_predicate_attribute'(Pred, imported, Module).
 '$predicate_property'(transparent, Pred) :-
@@ -887,8 +895,14 @@ define_or_generate(Pred) :-
     '$get_predicate_attribute'(Pred, indexed, Indices).
 '$predicate_property'(noprofile, Pred) :-
     '$get_predicate_attribute'(Pred, noprofile, 1).
+'$predicate_property'(ssu, Pred) :-
+    '$get_predicate_attribute'(Pred, ssu, 1).
 '$predicate_property'(iso, Pred) :-
     '$get_predicate_attribute'(Pred, iso, 1).
+'$predicate_property'(det, Pred) :-
+    '$get_predicate_attribute'(Pred, det, 1).
+'$predicate_property'(sig_atomic, Pred) :-
+    '$get_predicate_attribute'(Pred, sig_atomic, 1).
 '$predicate_property'(quasi_quotation_syntax, Pred) :-
     '$get_predicate_attribute'(Pred, quasi_quotation_syntax, 1).
 '$predicate_property'(defined, Pred) :-
@@ -900,6 +914,12 @@ define_or_generate(Pred) :-
     table_flag(Flag, Pred).
 '$predicate_property'(incremental, Pred) :-
     '$get_predicate_attribute'(Pred, incremental, 1).
+'$predicate_property'(monotonic, Pred) :-
+    '$get_predicate_attribute'(Pred, monotonic, 1).
+'$predicate_property'(opaque, Pred) :-
+    '$get_predicate_attribute'(Pred, opaque, 1).
+'$predicate_property'(lazy, Pred) :-
+    '$get_predicate_attribute'(Pred, lazy, 1).
 '$predicate_property'(abstract(N), Pred) :-
     '$get_predicate_attribute'(Pred, abstract, N).
 '$predicate_property'(size(Bytes), Pred) :-
@@ -920,6 +940,8 @@ table_flag(shared, Pred) :-
     '$get_predicate_attribute'(Pred, tshared, 1).
 table_flag(incremental, Pred) :-
     '$get_predicate_attribute'(Pred, incremental, 1).
+table_flag(monotonic, Pred) :-
+    '$get_predicate_attribute'(Pred, monotonic, 1).
 table_flag(subgoal_abstract(N), Pred) :-
     '$get_predicate_attribute'(Pred, subgoal_abstract, N).
 table_flag(answer_abstract(N), Pred) :-
@@ -941,7 +963,7 @@ visible_predicate(Pred) :-
     ->  (   '$get_predicate_attribute'(Pred, defined, 1)
         ->  true
         ;   \+ current_prolog_flag(M:unknown, fail),
-            functor(Head, Name, Arity),
+            '$head_name_arity'(Head, Name, Arity),
             '$find_library'(M, Name, Arity, _LoadModule, _Library)
         )
     ;   setof(PI, visible_in_module(M, PI), PIs),
@@ -1030,10 +1052,7 @@ set_pprops([H|T], M, Props) :-
     set_pprops1(Props, M:H),
     strip_module(M:H, M2, P),
     '$pi_head'(M2:P, Pred),
-    (   '$get_predicate_attribute'(Pred, incremental, 1)
-    ->  '$wrap_incremental'(Pred)
-    ;   '$unwrap_incremental'(Pred)
-    ),
+    '$set_table_wrappers'(Pred),
     set_pprops(T, M, Props).
 
 set_pprops1([], _).
@@ -1271,46 +1290,6 @@ prolog:called_by(on_signal(_,_,New), [New+1]) :-
 
 
                  /*******************************
-                 *            DLOPEN            *
-                 *******************************/
-
-%!  open_shared_object(+File, -Handle) is det.
-%!  open_shared_object(+File, -Handle, +Flags) is det.
-%
-%   Open a shared object or DLL file. Flags  is a list of flags. The
-%   following flags are recognised. Note   however  that these flags
-%   may have no affect on the target platform.
-%
-%       * =now=
-%       Resolve all symbols in the file now instead of lazily.
-%       * =global=
-%       Make new symbols globally known.
-
-open_shared_object(File, Handle) :-
-    open_shared_object(File, Handle, []). % use pl-load.c defaults
-
-open_shared_object(File, Handle, Flags) :-
-    (   is_list(Flags)
-    ->  true
-    ;   throw(error(type_error(list, Flags), _))
-    ),
-    map_dlflags(Flags, Mask),
-    '$open_shared_object'(File, Handle, Mask).
-
-dlopen_flag(now,        2'01).          % see pl-load.c for these constants
-dlopen_flag(global,     2'10).          % Solaris only
-
-map_dlflags([], 0).
-map_dlflags([F|T], M) :-
-    map_dlflags(T, M0),
-    (   dlopen_flag(F, I)
-    ->  true
-    ;   throw(error(domain_error(dlopen_flag, F), _))
-    ),
-    M is M0 \/ I.
-
-
-                 /*******************************
                  *             I/O              *
                  *******************************/
 
@@ -1398,6 +1377,48 @@ stack_property(low).
 stack_property(factor).
 
 
+		 /*******************************
+		 *            CLAUSE		*
+		 *******************************/
+
+%!  rule(:Head, -Rule) is nondet.
+%!  rule(:Head, -Rule, Ref) is nondet.
+%
+%   Similar to clause/2,3. but deals with clauses   that do not use `:-`
+%   as _neck_.
+
+rule(Head, Rule) :-
+    '$rule'(Head, Rule0),
+    conditional_rule(Rule0, Rule1),
+    Rule = Rule1.
+rule(Head, Rule, Ref) :-
+    '$rule'(Head, Rule0, Ref),
+    conditional_rule(Rule0, Rule1),
+    Rule = Rule1.
+
+conditional_rule(?=>(Head, (!, Body)), Rule) =>
+    Rule = (Head => Body).
+conditional_rule(?=>(Head, !), Rule) =>
+    Rule = (Head => true).
+conditional_rule(?=>(Head, Body0), Rule),
+    split_on_cut(Body0, Cond, Body) =>
+    Rule = (Head,Cond=>Body).
+conditional_rule(Head, Rule) =>
+    Rule = Head.
+
+split_on_cut((Cond0,!,Body0), Cond, Body) =>
+    Cond = Cond0,
+    Body = Body0.
+split_on_cut((!,Body0), Cond, Body) =>
+    Cond = true,
+    Body = Body0.
+split_on_cut((A,B), Cond, Body) =>
+    Cond = (A,Cond1),
+    split_on_cut(B, Cond1, Body).
+split_on_cut(_, _, _) =>
+    fail.
+
+
                  /*******************************
                  *             TERM             *
                  *******************************/
@@ -1475,6 +1496,47 @@ thread_join(Id) :-
     ;   throw(error(thread_error(Id, Status), _))
     ).
 
+%!  sig_block(:Pattern) is det.
+%
+%   Block thread signals that unify with Pattern.
+
+%!  sig_unblock(:Pattern) is det.
+%
+%   Remove any signal block that is more specific than Pattern.
+
+sig_block(Pattern) :-
+    (   nb_current('$sig_blocked', List)
+    ->  true
+    ;   List = []
+    ),
+    nb_setval('$sig_blocked', [Pattern|List]).
+
+sig_unblock(Pattern) :-
+    (   nb_current('$sig_blocked', List)
+    ->  unblock(List, Pattern, NewList),
+        (   List == NewList
+        ->  true
+        ;   nb_setval('$sig_blocked', NewList),
+            '$sig_unblock'
+        )
+    ;   true
+    ).
+
+unblock([], _, []).
+unblock([H|T], P, List) :-
+    (   subsumes_term(P, H)
+    ->  unblock(T, P, List)
+    ;   List = [H|T1],
+        unblock(T, P, T1)
+    ).
+
+:- public signal_is_blocked/1.          % called by signal_is_blocked()
+
+signal_is_blocked(Head) :-
+    nb_current('$sig_blocked', List),
+    '$member'(Head, List),
+    !.
+
 %!  set_prolog_gc_thread(+Status)
 %
 %   Control the GC thread.  Status is one of
@@ -1518,6 +1580,63 @@ set_prolog_gc_thread(stop) :-
     ).
 set_prolog_gc_thread(Status) :-
     '$domain_error'(gc_thread, Status).
+
+%!  transaction(:Goal).
+%!  transaction(:Goal, +Options).
+%!  transaction(:Goal, :Constraint, +Mutex).
+%!  snapshot(:Goal).
+%
+%   Wrappers to guarantee clean Module:Goal terms.
+
+transaction(Goal) :-
+    '$transaction'(Goal, []).
+transaction(Goal, Options) :-
+    '$transaction'(Goal, Options).
+transaction(Goal, Constraint, Mutex) :-
+    '$transaction'(Goal, Constraint, Mutex).
+snapshot(Goal) :-
+    '$snapshot'(Goal).
+
+
+		 /*******************************
+		 *            UNDO		*
+		 *******************************/
+
+:- meta_predicate
+    undo(0).
+
+%!  undo(:Goal)
+%
+%   Schedule Goal to be called when backtracking takes us back to
+%   before this call.
+
+undo(Goal) :-
+    '$undo'(Goal).
+
+:- public
+    '$run_undo'/1.
+
+'$run_undo'([One]) :-
+    !,
+    call(One).
+'$run_undo'(List) :-
+    run_undo(List, _, Error),
+    (   var(Error)
+    ->  true
+    ;   throw(Error)
+    ).
+
+run_undo([], E, E).
+run_undo([H|T], E0, E) :-
+    (   catch(H, E1, true)
+    ->  (   var(E1)
+        ->  true
+        ;   '$urgent_exception'(E0, E1, E2)
+        )
+    ;   true
+    ),
+    run_undo(T, E2, E).
+
 
 %!  '$wrap_predicate'(:Head, +Name, -Closure, -Wrapped, +Body) is det.
 %
