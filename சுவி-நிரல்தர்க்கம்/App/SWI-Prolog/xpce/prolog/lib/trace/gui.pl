@@ -2,9 +2,10 @@
 
     Author:        Jan Wielemaker and Anjo Anjewierden
     E-mail:        J.Wielemaker@vu.nl
-    WWW:           http://www.swi-prolog/projects/xpce/
-    Copyright (c)  2001-2016, University of Amsterdam
+    WWW:           http://www.swi-prolog.org/packages/xpce/
+    Copyright (c)  2001-2022, University of Amsterdam
                               VU University Amsterdam
+                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -53,7 +54,9 @@
 :- use_module(library(pce_util)).
 :- use_module(library(persistent_frame)).
 :- use_module(library(debug)).
+:- if(exists_source(library(threadutil))).
 :- use_module(library(threadutil)).
+:- endif.
 :- use_module(library(pprint)).
 :- use_module(trace).
 :- use_module(clause).
@@ -66,11 +69,10 @@
 :- require([ make/0,
 	     acyclic_term/1,
 	     current_predicate/1,
-	     message_queue_create/1,
-	     message_queue_destroy/1,
 	     notrace/1,
 	     pce_image_directory/1,
 	     portray_text/1,
+             set_portray_text/3,
 	     prolog_ide/1,
 	     thread_self/1,
 	     atomic_list_concat/2,
@@ -81,10 +83,6 @@
 	     prolog_unlisten/2,
 	     string_codes/2,
 	     term_attvars/2,
-	     thread_get_message/2,
-	     thread_property/2,
-	     thread_send_message/2,
-	     thread_signal/2,
 	     unify_with_occurs_check/2,
 	     with_mutex/2,
 	     '$factorize_term'/3,
@@ -96,6 +94,16 @@
 	     numbervars/4,
              start_emacs/0
 	   ]).
+
+:- if(current_prolog_flag(threads, true)).
+:- require([ message_queue_create/1,
+	     message_queue_destroy/1,
+	     thread_get_message/2,
+	     thread_property/2,
+	     thread_send_message/2,
+	     thread_signal/2
+           ]).
+:- endif.
 
 :- multifile
     user:message_hook/3.
@@ -616,10 +624,15 @@ update_portray_text(_GUI, MI:menu_item) :->
     portraying_text(Bool),
     send(MI, selected, Bool).
 
+%!  portraying_text(-Bool) is det.
+%
+%   Whether or not portraying text is enabled. The first checks that the
+%   library is loaded.
+
 portraying_text(Bool) :-
-    current_predicate(portray_text:do_portray_text/1),
+    current_predicate(portray_text:set_portray_text/3),
     !,
-    portray_text:do_portray_text(Bool).
+    set_portray_text(enabled, Bool, Bool).
 portraying_text(false).
 
 trapped_location(GUI, StartFrame:int, Frame:int, Port:name) :->
@@ -1238,6 +1251,7 @@ bindings(B, Bindings:prolog) :->
         Constraints = []
     ;   copy_term(Bindings, Plain, Constraints)
     ),
+    debug(gtrace(bindings), 'Plain = ~p, Constraints = ~p', [Plain, Constraints]),
     bind_vars(Plain),
     cycles(Plain, Template, Cycles, Plain),
     send(B, background, ?(B, class_variable_value, background_active)),
@@ -1257,8 +1271,11 @@ bindings(B, Bindings:prolog) :->
 bind_vars([]).
 bind_vars([Vars=Value|T]) :-
     (   var(Value)
-    ->  Vars = [Name:_|_],
-        Value = '$VAR'(Name)
+    ->  (   Vars = [Name:_|_]       % clustered
+        ->  Value = '$VAR'(Name)
+        ;   Vars = Name:_           % non-clustered
+        ->  Value = '$VAR'(Name)
+        )
     ;   true
     ),
     bind_vars(T).
@@ -1299,7 +1316,10 @@ name_cycle_vars([H|T], I, Bindings) :-
 append_binding(B, Names0:prolog, ValueTerm:prolog, Fd:prolog) :->
     "Add a binding to the browser"::
     ValueTerm = value(Value0),      % protect :=, ?, etc.
-    (   Value0 = '$VAR'(Name), Names0 = [Name:_]
+    (   Value0 = '$VAR'(Name),
+        (   Names0 = [Name:_]
+        ;   Names0 = Name:_
+        )
     ->  (   setting(show_unbound, false)
         ->  true
         ;   format(Fd, '~w\t= _~n', [Name])

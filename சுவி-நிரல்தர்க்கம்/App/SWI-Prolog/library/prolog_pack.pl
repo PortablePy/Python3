@@ -3,8 +3,9 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2012-2019, VU University Amsterdam
+    Copyright (c)  2012-2021, VU University Amsterdam
                               CWI, Amsterdam
+                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -45,12 +46,12 @@
             pack_rebuild/0,             % All packages
             pack_remove/1,              % +Name
             pack_property/2,            % ?Name, ?Property
+            pack_attach/2,              % +Dir, +Options
 
             pack_url_file/2             % +URL, -File
           ]).
 :- use_module(library(apply)).
 :- use_module(library(error)).
-:- use_module(library(process)).
 :- use_module(library(option)).
 :- use_module(library(readutil)).
 :- use_module(library(lists)).
@@ -58,17 +59,25 @@
 :- use_module(library(xpath)).
 :- use_module(library(settings)).
 :- use_module(library(uri)).
+:- use_module(library(dcg/basics)).
 :- use_module(library(http/http_open)).
 :- use_module(library(http/json)).
 :- use_module(library(http/http_client), []).   % plugin for POST support
 :- use_module(library(prolog_config)).
+:- use_module(library(debug), [assertion/1]).
+:- use_module(library(pairs), [group_pairs_by_key/2]).
+% Stuff we may not have and may not need
+:- autoload(library(git)).
+:- autoload(library(sgml)).
+:- autoload(library(sha)).
+:- autoload(library(build/tools)).
 
 /** <module> A package manager for Prolog
 
 The library(prolog_pack) provides the SWI-Prolog   package manager. This
 library lets you inspect installed   packages,  install packages, remove
 packages, etc. It is complemented by   the  built-in attach_packs/0 that
-makes installed packages available as libaries.
+makes installed packages available as libraries.
 
 @see    Installed packages can be inspected using =|?- doc_browser.|=
 @tbd    Version logic
@@ -99,11 +108,15 @@ makes installed packages available as libaries.
                  *******************************/
 
 %!  current_pack(?Pack) is nondet.
+%!  current_pack(?Pack, ?Dir) is nondet.
 %
 %   True if Pack is a currently installed pack.
 
 current_pack(Pack) :-
-    '$pack':pack(Pack, _).
+    current_pack(Pack, _).
+
+current_pack(Pack, Dir) :-
+    '$pack':pack(Pack, Dir).
 
 %!  pack_list_installed is det.
 %
@@ -282,9 +295,10 @@ pack_info_term(title(atom)).
 pack_info_term(keywords(list(atom))).
 pack_info_term(description(list(atom))).
 pack_info_term(version(version)).
-pack_info_term(author(atom, email_or_url)).     % Persons
+pack_info_term(author(atom, email_or_url_or_empty)).     % Persons
 pack_info_term(maintainer(atom, email_or_url)).
 pack_info_term(packager(atom, email_or_url)).
+pack_info_term(pack_version(nonneg)).           % Package convention version
 pack_info_term(home(atom)).                     % Home page
 pack_info_term(download(atom)).                 % Source
 pack_info_term(provides(atom)).                 % Dependencies
@@ -304,6 +318,11 @@ error:has_type(email_or_url, Address) :-
     (   sub_atom(Address, _, _, _, @)
     ->  true
     ;   uri_is_global(Address)
+    ).
+error:has_type(email_or_url_or_empty, Address) :-
+    (   Address == ''
+    ->  true
+    ;   error:has_type(email_or_url, Address)
     ).
 error:has_type(dependency, Value) :-
     is_dependency(Value, _Token, _Version).
@@ -446,7 +465,7 @@ search_info(download(_)).
 %       star (*) for the version.  In this case pack_install asks
 %       for the directory content and selects the latest version.
 %     * GIT URL (not well supported yet)
-%     * A local directory name given as =|file://|= URL.
+%     * A local directory name given as =|file://|= URL or `'.'`
 %     * A package name.  This queries the package repository
 %       at http://www.swi-prolog.org
 %
@@ -504,6 +523,19 @@ pack_default_options(FileURL, Pack, _, Options) :-      % Install from directory
         Options = [url(DirURL), version(Version)]
     ;   throw(error(existence_error(key, version, Dir),_))
     ).
+pack_default_options('.', Pack, _, Options) :-          % Install from CWD
+    pack_info_term('.', name(Pack)),
+    !,
+    working_directory(Dir, Dir),
+    (   pack_info_term(Dir, version(Version))
+    ->  uri_file_name(DirURL, Dir),
+        Options = [url(DirURL), version(Version) | Options1],
+        (   current_prolog_flag(windows, true)
+        ->  Options1 = []
+        ;   Options1 = [link(true), rebuild(make)]
+        )
+    ;   throw(error(existence_error(key, version, Dir),_))
+    ).
 pack_default_options(URL, Pack, _, Options) :-          % Install from URL
     pack_version_file(Pack, Version, URL),
     download_url(URL),
@@ -531,11 +563,12 @@ version_options(_, _, []).
 %
 %   Select from available packages.
 
-pack_select_candidate(Pack, [Version-_|_], Options,
+pack_select_candidate(Pack, [AtomVersion-_|_], Options,
                       [already_installed(pack(Pack, Installed))|Options]) :-
     current_pack(Pack),
     pack_info(Pack, _, version(InstalledAtom)),
     atom_version(InstalledAtom, Installed),
+    atom_version(AtomVersion, Version),
     Installed @>= Version,
     !.
 pack_select_candidate(Pack, Available, Options, OptsOut) :-
@@ -554,13 +587,14 @@ pack_select_candidate(Pack, [Version-[URL]|_], Options,
     !,
     confirm(install_from(Pack, Version, git(URL)), yes, Options).
 pack_select_candidate(Pack, [Version-[URL]|More], Options,
-                      [url(URL), inquiry(true)]) :-
+                      [url(URL), inquiry(true) | Upgrade]) :-
     (   More == []
     ->  !
     ;   true
     ),
     confirm(install_from(Pack, Version, URL), yes, Options),
-    !.
+    !,
+    add_upgrade(Pack, Upgrade).
 pack_select_candidate(Pack, [Version-URLs|_], Options,
                       [url(URL), inquiry(true)|Rest]) :-
     maplist(url_menu_item, URLs, Tagged),
@@ -571,10 +605,17 @@ pack_select_candidate(Pack, [Version-URLs|_], Options,
     (   Choice == cancel
     ->  fail
     ;   Choice = git(URL)
-    ->  Rest = [git(true)]
+    ->  Rest = [git(true)|Upgrade]
     ;   Choice = URL,
-        Rest = []
-    ).
+        Rest = Upgrade
+    ),
+    add_upgrade(Pack, Upgrade).
+
+add_upgrade(Pack, Options) :-
+    current_pack(Pack),
+    !,
+    Options = [upgrade(true)].
+add_upgrade(_, []).
 
 url_menu_item(URL, git(URL)=install_from(git(URL))) :-
     git_url(URL, _),
@@ -591,7 +632,15 @@ url_menu_item(URL, URL=install_from(URL)).
 %     * url(+URL)
 %     Source for downloading the package
 %     * package_directory(+Dir)
-%     Directory into which to install the package
+%     Directory into which to install the package.
+%     * global(+Boolean)
+%     If `true`, install in the XDG common application data path, making
+%     the pack accessible to everyone. If `false`, install in the XDG
+%     user application data path, making the pack accessible for the
+%     current user only.  If the option is absent, use the first
+%     existing and writable directory.  If that doesn't exist find
+%     locations where it can be created and prompt the user to do
+%     so.
 %     * interactive(+Boolean)
 %     Use default answer without asking the user if there
 %     is a default action.
@@ -601,9 +650,21 @@ url_menu_item(URL, URL=install_from(URL)).
 %     * upgrade(+Boolean)
 %     If `true` (default `false`), upgrade package if it is already
 %     installed.
+%     * rebuild(Condition)
+%     Rebuild the foreign components.  Condition is one of
+%     `if_absent` (default, do nothing if the directory with foreign
+%     resources exists), `make` (run `make`) or `true` (run `make
+%     distclean` followed by the default configure and build steps).
+%     * test(Boolean)
+%     If `true` (default), run the pack tests.
 %     * git(+Boolean)
 %     If `true` (default `false` unless `URL` ends with =.git=),
 %     assume the URL is a GIT repository.
+%     * link(+Boolean)
+%     Can be used if the installation source is a local directory
+%     and the file system supports symbolic links.  In this case
+%     the system adds the current directory to the pack registration
+%     using a symbolic link and performs the local installation steps.
 %
 %   Non-interactive installation can be established using the option
 %   interactive(false). It is adviced to   install from a particular
@@ -623,19 +684,32 @@ pack_install(Spec, Options) :-
 pack_install_dir(PackDir, Options) :-
     option(package_directory(PackDir), Options),
     !.
-pack_install_dir(PackDir, _Options) :-          % TBD: global/user?
-    absolute_file_name(pack(.), PackDir,
+pack_install_dir(PackDir, Options) :-
+    base_alias(Alias, Options),
+    absolute_file_name(Alias, PackDir,
                        [ file_type(directory),
                          access(write),
                          file_errors(fail)
                        ]),
     !.
-pack_install_dir(PackDir, Options) :-           % TBD: global/user?
+pack_install_dir(PackDir, Options) :-
     pack_create_install_dir(PackDir, Options).
 
+base_alias(Alias, Options) :-
+    option(global(true), Options),
+    !,
+    Alias = common_app_data(pack).
+base_alias(Alias, Options) :-
+    option(global(false), Options),
+    !,
+    Alias = user_app_data(pack).
+base_alias(Alias, _Options) :-
+    Alias = pack('.').
+
 pack_create_install_dir(PackDir, Options) :-
+    base_alias(Alias, Options),
     findall(Candidate = create_dir(Candidate),
-            ( absolute_file_name(pack(.), Candidate, [solutions(all)]),
+            ( absolute_file_name(Alias, Candidate, [solutions(all)]),
               \+ exists_file(Candidate),
               \+ exists_directory(Candidate),
               file_directory_name(Candidate, Super),
@@ -678,8 +752,9 @@ pack_create_install_dir(_, _, _) :-
 %     an error and fail.
 
 pack_install(Name, _, Options) :-
-    current_pack(Name),
+    current_pack(Name, Dir),
     option(upgrade(false), Options, false),
+    \+ pack_is_in_local_dir(Name, Dir, Options),
     print_message(error, pack(already_installed(Name))),
     pack_info(Name),
     print_message(information, pack(remove_with(Name))),
@@ -707,8 +782,17 @@ pack_install_from_local(Source, PackTopDir, Name, Options) :-
     exists_directory(Source),
     !,
     directory_file_path(PackTopDir, Name, PackDir),
-    prepare_pack_dir(PackDir, Options),
-    copy_directory(Source, PackDir),
+    (   option(link(true), Options)
+    ->  (   same_file(Source, PackDir)
+        ->  true
+        ;   atom_concat(PackTopDir, '/', PackTopDirS),
+            relative_file_name(Source, PackTopDirS, RelPath),
+            link_file(RelPath, PackDir, symbolic),
+            assertion(same_file(Source, PackDir))
+        )
+    ;   prepare_pack_dir(PackDir, Options),
+        copy_directory(Source, PackDir)
+    ),
     pack_post_install(Name, PackDir, Options).
 pack_install_from_local(Source, PackTopDir, Name, Options) :-
     exists_file(Source),
@@ -716,6 +800,11 @@ pack_install_from_local(Source, PackTopDir, Name, Options) :-
     prepare_pack_dir(PackDir, Options),
     pack_unpack(Source, PackDir, Name, Options),
     pack_post_install(Name, PackDir, Options).
+
+pack_is_in_local_dir(_Pack, PackDir, Options) :-
+    option(url(DirURL), Options),
+    uri_file_name(DirURL, Dir),
+    same_file(PackDir, Dir).
 
 
 %!  pack_unpack(+SourceFile, +PackDir, +Pack, +Options)
@@ -862,19 +951,24 @@ must_match(Values, Field) :-
 
 %!  prepare_pack_dir(+Dir, +Options)
 %
-%   Prepare for installing the package into  Dir. This should create
-%   Dir if it does not  exist  and   warn  if  the directory already
-%   exists, asking to make it empty.
+%   Prepare for installing the package into  Dir. This
+%
+%     - If the directory exist and is empty, done.
+%     - Else if the directory exists, remove the directory and recreate
+%       it. Note that if the directory is a symlink this just deletes
+%       the link.
+%     - Else create the directory.
 
 prepare_pack_dir(Dir, Options) :-
     exists_directory(Dir),
     !,
     (   empty_directory(Dir)
     ->  true
-    ;   option(upgrade(true), Options)
-    ->  delete_directory_contents(Dir)
-    ;   confirm(remove_existing_pack(Dir), yes, Options),
-        delete_directory_contents(Dir)
+    ;   (   option(upgrade(true), Options)
+        ;   confirm(remove_existing_pack(Dir), yes, Options)
+        )
+    ->  delete_directory_and_contents(Dir),
+        make_directory(Dir)
     ).
 prepare_pack_dir(Dir, _) :-
     make_directory(Dir).
@@ -1009,15 +1103,12 @@ download_scheme(https) :-
 %
 %   Process post installation work.  Steps:
 %
-%     - Create foreign resources [TBD]
+%     - Create foreign resources
 %     - Register directory as autoload library
 %     - Attach the package
 
 pack_post_install(Pack, PackDir, Options) :-
-    post_install_foreign(Pack, PackDir,
-                         [ build_foreign(if_absent)
-                         | Options
-                         ]),
+    post_install_foreign(Pack, PackDir, Options),
     post_install_autoload(PackDir, Options),
     '$pack_attach'(PackDir).
 
@@ -1026,13 +1117,23 @@ pack_post_install(Pack, PackDir, Options) :-
 %   Rebuilt possible foreign components of Pack.
 
 pack_rebuild(Pack) :-
-    '$pack':pack(Pack, BaseDir),
+    current_pack(Pack, PackDir),
     !,
-    catch(pack_make(BaseDir, [distclean], []), E,
-          print_message(warning, E)),
-    post_install_foreign(Pack, BaseDir, []).
+    post_install_foreign(Pack, PackDir, [rebuild(true)]).
+pack_rebuild(Pack) :-
+    unattached_pacth(Pack, PackDir),
+    !,
+    post_install_foreign(Pack, PackDir, [rebuild(true)]).
 pack_rebuild(Pack) :-
     existence_error(pack, Pack).
+
+unattached_pacth(Pack, BaseDir) :-
+    directory_file_path(Pack, 'pack.pl', PackFile),
+    absolute_file_name(pack(PackFile), PackPath,
+                       [ access(read),
+                         file_errors(fail)
+                       ]),
+    file_directory_name(PackPath, BaseDir).
 
 %!  pack_rebuild is det.
 %
@@ -1050,17 +1151,35 @@ pack_rebuild :-
 %   Install foreign parts of the package.
 
 post_install_foreign(Pack, PackDir, Options) :-
-    is_foreign_pack(PackDir),
+    is_foreign_pack(PackDir, _),
     !,
-    (   option(build_foreign(if_absent), Options),
+    (   pack_info_term(PackDir, pack_version(Version))
+    ->  true
+    ;   Version = 1
+    ),
+    option(rebuild(Rebuild), Options, if_absent),
+    (   Rebuild == if_absent,
         foreign_present(PackDir)
     ->  print_message(informational, pack(kept_foreign(Pack)))
-    ;   setup_path,
-        save_build_environment(PackDir),
-        configure_foreign(PackDir, Options),
-        make_foreign(PackDir, Options)
+    ;   BuildSteps0 = [[dependencies], [configure], build, [test], install],
+        (   Rebuild == true
+        ->  BuildSteps1 = [distclean|BuildSteps0]
+        ;   BuildSteps1 = BuildSteps0
+        ),
+        (   option(test(false), Options)
+        ->  delete(BuildSteps1, [test], BuildSteps)
+        ;   BuildSteps = BuildSteps1
+        ),
+        build_steps(BuildSteps, PackDir, [pack_version(Version)|Options])
     ).
 post_install_foreign(_, _, _).
+
+
+%!  foreign_present(+PackDir) is semidet.
+%
+%   True if we find one or more modules  in the pack `lib` directory for
+%   the current architecture. Does not check   that these can be loaded,
+%   nor whether all required modules are present.
 
 foreign_present(PackDir) :-
     current_prolog_flag(arch, Arch),
@@ -1074,331 +1193,25 @@ foreign_present(PackDir) :-
     expand_file_name(Pattern, Files),
     Files \== [].
 
-is_foreign_pack(PackDir) :-
-    foreign_file(File),
+%!  is_foreign_pack(+PackDir, -Type) is nondet.
+%
+%   True when PackDir contains  files  that   indicate  the  need  for a
+%   specific class of build tools indicated by Type.
+
+is_foreign_pack(PackDir, Type) :-
+    foreign_file(File, Type),
     directory_file_path(PackDir, File, Path),
-    exists_file(Path),
-    !.
+    exists_file(Path).
 
-foreign_file('configure.in').
-foreign_file('configure.ac').
-foreign_file('configure').
-foreign_file('Makefile').
-foreign_file('makefile').
-foreign_file('CMakeLists.txt').
-
-
-%!  configure_foreign(+PackDir, +Options) is det.
-%
-%   Run configure if it exists.  If =|configure.ac|= or =|configure.in|=
-%   exists, first run =autoheader= and =autoconf=
-
-configure_foreign(PackDir, Options) :-
-    directory_file_path(PackDir, 'CMakeLists.txt', CMakeFile),
-    exists_file(CMakeFile),
-    !,
-    cmake_configure_foreign(PackDir, Options).
-configure_foreign(PackDir, Options) :-
-    make_configure(PackDir, Options),
-    directory_file_path(PackDir, configure, Configure),
-    exists_file(Configure),
-    !,
-    build_environment(BuildEnv),
-    run_process(path(bash), [Configure],
-                [ env(BuildEnv),
-                  directory(PackDir)
-                ]).
-configure_foreign(_, _).
-
-make_configure(PackDir, _Options) :-
-    directory_file_path(PackDir, 'configure', Configure),
-    exists_file(Configure),
-    !.
-make_configure(PackDir, _Options) :-
-    autoconf_master(ConfigMaster),
-    directory_file_path(PackDir, ConfigMaster, ConfigureIn),
-    exists_file(ConfigureIn),
-    !,
-    run_process(path(autoheader), [], [directory(PackDir)]),
-    run_process(path(autoconf),   [], [directory(PackDir)]).
-make_configure(_, _).
-
-autoconf_master('configure.ac').
-autoconf_master('configure.in').
-
-%!  cmake_configure_foreign(+PackDir, +Options) is det.
-%
-%   Create a `build` directory in PackDir and run `cmake ..`
-
-cmake_configure_foreign(PackDir, _Options) :-
-    directory_file_path(PackDir, build, BuildDir),
-    make_directory_path(BuildDir),
-    current_prolog_flag(executable, Exe),
-    format(atom(CDEF), '-DSWIPL=~w', [Exe]),
-    run_process(path(cmake), [CDEF, '..'],
-                [directory(BuildDir)]).
-
-
-%!  make_foreign(+PackDir, +Options) is det.
-%
-%   Generate the foreign executable.
-
-make_foreign(PackDir, Options) :-
-    pack_make(PackDir, [all, check, install], Options).
-
-pack_make(PackDir, Targets, _Options) :-
-    directory_file_path(PackDir, 'Makefile', Makefile),
-    exists_file(Makefile),
-    !,
-    build_environment(BuildEnv),
-    ProcessOptions = [ directory(PackDir), env(BuildEnv) ],
-    forall(member(Target, Targets),
-           run_process(path(make), [Target], ProcessOptions)).
-pack_make(PackDir, Targets, _Options) :-
-    directory_file_path(PackDir, 'CMakeLists.txt', CMakefile),
-    exists_file(CMakefile),
-    directory_file_path(PackDir, 'build', BuildDir),
-    exists_directory(BuildDir),
-    !,
-    (   Targets == [distclean]
-    ->  delete_directory_contents(BuildDir)
-    ;   build_environment(BuildEnv),
-        ProcessOptions = [ directory(BuildDir), env(BuildEnv) ],
-        forall(member(Target, Targets),
-               run_cmake_target(Target, BuildDir, ProcessOptions))
-    ).
-pack_make(_, _, _).
-
-run_cmake_target(check, BuildDir, ProcessOptions) :-
-    !,
-    (   directory_file_path(BuildDir, 'CTestTestfile.cmake', TestFile),
-        exists_file(TestFile)
-    ->  run_process(path(ctest), [], ProcessOptions)
-    ;   true
-    ).
-run_cmake_target(Target, _, ProcessOptions) :-
-    run_process(path(make), [Target], ProcessOptions).
-
-%!  save_build_environment(+PackDir)
-%
-%   Create  a  shell-script  build.env  that    contains  the  build
-%   environment.
-
-save_build_environment(PackDir) :-
-    directory_file_path(PackDir, 'buildenv.sh', EnvFile),
-    build_environment(Env),
-    setup_call_cleanup(
-        open(EnvFile, write, Out),
-        write_env_script(Out, Env),
-        close(Out)).
-
-write_env_script(Out, Env) :-
-    format(Out,
-           '# This file contains the environment that can be used to\n\c
-                # build the foreign pack outside Prolog.  This file must\n\c
-                # be loaded into a bourne-compatible shell using\n\c
-                #\n\c
-                #   $ source buildenv.sh\n\n',
-           []),
-    forall(member(Var=Value, Env),
-           format(Out, '~w=\'~w\'\n', [Var, Value])),
-    format(Out, '\nexport ', []),
-    forall(member(Var=_, Env),
-           format(Out, ' ~w', [Var])),
-    format(Out, '\n', []).
-
-build_environment(Env) :-
-    findall(Name=Value, environment(Name, Value), UserEnv),
-    findall(Name=Value,
-            ( def_environment(Name, Value),
-              \+ memberchk(Name=_, UserEnv)
-            ),
-            DefEnv),
-    append(UserEnv, DefEnv, Env).
-
-
-%!  environment(-Name, -Value) is nondet.
-%
-%   Hook  to  define  the  environment   for  building  packs.  This
-%   Multifile hook extends the  process   environment  for  building
-%   foreign extensions. A value  provided   by  this  hook overrules
-%   defaults provided by def_environment/2. In  addition to changing
-%   the environment, this may be used   to pass additional values to
-%   the environment, as in:
-%
-%     ==
-%     prolog_pack:environment('USER', User) :-
-%         getenv('USER', User).
-%     ==
-%
-%   @param Name is an atom denoting a valid variable name
-%   @param Value is either an atom or number representing the
-%          value of the variable.
-
-
-%!  def_environment(-Name, -Value) is nondet.
-%
-%   True if Name=Value must appear in   the environment for building
-%   foreign extensions.
-
-def_environment('PATH', Value) :-
-    getenv('PATH', PATH),
-    current_prolog_flag(executable, Exe),
-    file_directory_name(Exe, ExeDir),
-    prolog_to_os_filename(ExeDir, OsExeDir),
-    (   current_prolog_flag(windows, true)
-    ->  Sep = (;)
-    ;   Sep = (:)
-    ),
-    atomic_list_concat([OsExeDir, Sep, PATH], Value).
-def_environment('SWIPL', Value) :-
-    current_prolog_flag(executable, Value).
-def_environment('SWIPLVERSION', Value) :-
-    current_prolog_flag(version, Value).
-def_environment('SWIHOME', Value) :-
-    current_prolog_flag(home, Value).
-def_environment('SWIARCH', Value) :-
-    current_prolog_flag(arch, Value).
-def_environment('PACKSODIR', Value) :-
-    current_prolog_flag(arch, Arch),
-    atom_concat('lib/', Arch, Value).
-def_environment('SWISOLIB', Value) :-
-    current_prolog_flag(c_libplso, Value).
-def_environment('SWILIB', '-lswipl').
-def_environment('CC', Value) :-
-    (   getenv('CC', Value)
-    ->  true
-    ;   default_c_compiler(Value)
-    ->  true
-    ;   current_prolog_flag(c_cc, Value)
-    ).
-def_environment('LD', Value) :-
-    (   getenv('LD', Value)
-    ->  true
-    ;   current_prolog_flag(c_cc, Value)
-    ).
-def_environment('CFLAGS', Value) :-
-    (   getenv('CFLAGS', SystemFlags)
-    ->  Extra = [' ', SystemFlags]
-    ;   Extra = []
-    ),
-    current_prolog_flag(c_cflags, Value0),
-    current_prolog_flag(home, Home),
-    atomic_list_concat([Value0, ' -I"', Home, '/include"' | Extra], Value).
-def_environment('LDSOFLAGS', Value) :-
-    (   getenv('LDFLAGS', SystemFlags)
-    ->  Extra = [SystemFlags|System]
-    ;   Extra = System
-    ),
-    (   current_prolog_flag(windows, true)
-    ->  current_prolog_flag(home, Home),
-        atomic_list_concat(['-L"', Home, '/bin"'], SystemLib),
-        System = [SystemLib]
-    ;   apple_bundle_libdir(LibDir)
-    ->  atomic_list_concat(['-L"', LibDir, '"'], SystemLib),
-        System = [SystemLib]
-    ;   current_prolog_flag(c_libplso, '')
-    ->  System = []                 % ELF systems do not need this
-    ;   prolog_library_dir(SystemLibDir),
-        atomic_list_concat(['-L"',SystemLibDir,'"'], SystemLib),
-        System = [SystemLib]
-    ),
-    current_prolog_flag(c_ldflags, LDFlags),
-    atomic_list_concat([LDFlags, '-shared' | Extra], ' ', Value).
-def_environment('SOEXT', Value) :-
-    current_prolog_flag(shared_object_extension, Value).
-def_environment(Pass, Value) :-
-    pass_env(Pass),
-    getenv(Pass, Value).
-
-pass_env('TMP').
-pass_env('TEMP').
-pass_env('USER').
-pass_env('HOME').
-
-:- multifile
-    prolog:runtime_config/2.
-
-prolog_library_dir(Dir) :-
-    prolog:runtime_config(c_libdir, Dir),
-    !.
-prolog_library_dir(Dir) :-
-    current_prolog_flag(home, Home),
-    (   current_prolog_flag(c_libdir, Rel)
-    ->  atomic_list_concat([Home, Rel], /, Dir)
-    ;   current_prolog_flag(arch, Arch)
-    ->  atomic_list_concat([Home, lib, Arch], /, Dir)
-    ).
-
-%!  default_c_compiler(-CC) is semidet.
-%
-%   Try to find a  suitable  C   compiler  for  compiling  packages with
-%   foreign code.
-%
-%   @tbd Needs proper defaults for Windows.  Find MinGW?  Find MSVC?
-
-default_c_compiler(CC) :-
-    preferred_c_compiler(CC),
-    has_program(path(CC), _),
-    !.
-
-preferred_c_compiler(gcc).
-preferred_c_compiler(clang).
-preferred_c_compiler(cc).
-
-
-                 /*******************************
-                 *             PATHS            *
-                 *******************************/
-
-setup_path :-
-    has_program(path(make), _),
-    has_program(path(gcc), _),
-    !.
-setup_path :-
-    current_prolog_flag(windows, true),
-    !,
-    (   mingw_extend_path
-    ->  true
-    ;   print_message(error, pack(no_mingw))
-    ).
-setup_path.
-
-has_program(Program, Path) :-
-    exe_options(ExeOptions),
-    absolute_file_name(Program, Path,
-                       [ file_errors(fail)
-                       | ExeOptions
-                       ]).
-
-exe_options(Options) :-
-    current_prolog_flag(windows, true),
-    !,
-    Options = [ extensions(['',exe,com]), access(read) ].
-exe_options(Options) :-
-    Options = [ access(execute) ].
-
-mingw_extend_path :-
-    mingw_root(MinGW),
-    directory_file_path(MinGW, bin, MinGWBinDir),
-    atom_concat(MinGW, '/msys/*/bin', Pattern),
-    expand_file_name(Pattern, MsysDirs),
-    last(MsysDirs, MSysBinDir),
-    prolog_to_os_filename(MinGWBinDir, WinDirMinGW),
-    prolog_to_os_filename(MSysBinDir, WinDirMSYS),
-    getenv('PATH', Path0),
-    atomic_list_concat([WinDirMSYS, WinDirMinGW, Path0], ';', Path),
-    setenv('PATH', Path).
-
-mingw_root(MinGwRoot) :-
-    current_prolog_flag(executable, Exe),
-    sub_atom(Exe, 1, _, _, :),
-    sub_atom(Exe, 0, 1, _, PlDrive),
-    Drives = [PlDrive,c,d],
-    member(Drive, Drives),
-    format(atom(MinGwRoot), '~a:/MinGW', [Drive]),
-    exists_directory(MinGwRoot),
-    !.
+foreign_file('CMakeLists.txt', cmake).
+foreign_file('configure',      configure).
+foreign_file('configure.in',   autoconf).
+foreign_file('configure.ac',   autoconf).
+foreign_file('Makefile.am',    automake).
+foreign_file('Makefile',       make).
+foreign_file('makefile',       make).
+foreign_file('conanfile.txt',  conan).
+foreign_file('conanfile.py',   conan).
 
 
                  /*******************************
@@ -1490,13 +1303,8 @@ pack_remove_forced(Pack) :-
     print_message(informational, pack(remove(BaseDir))),
     delete_directory_and_contents(BaseDir).
 pack_remove_forced(Pack) :-
-    directory_file_path(Pack, 'pack.pl', PackFile),
-    absolute_file_name(pack(PackFile), PackPath,
-                       [ access(read),
-                         file_errors(fail)
-                       ]),
+    unattached_pacth(Pack, BaseDir),
     !,
-    file_directory_name(PackPath, BaseDir),
     delete_directory_and_contents(BaseDir).
 pack_remove_forced(Pack) :-
     print_message(informational, error(existence_error(pack, Pack),_)).
@@ -1570,11 +1378,15 @@ info_file(todo(_),   'todo').
 git_url(URL, Pack) :-
     uri_components(URL, Components),
     uri_data(scheme, Components, Scheme),
+    nonvar(Scheme),                         % must be full URL
     uri_data(path, Components, Path),
     (   Scheme == git
     ->  true
     ;   git_download_scheme(Scheme),
         file_name_extension(_, git, Path)
+    ;   git_download_scheme(Scheme),
+        catch(git_ls_remote(URL, _, [refs(['HEAD']), error(_)]), _, fail)
+    ->  true
     ),
     file_base_name(Path, PackExt),
     (   file_name_extension(Pack, git, PackExt)
@@ -1657,11 +1469,15 @@ github_release_url(URL, Pack, Version) :-
     uri_data(scheme, Components, Scheme),
     download_scheme(Scheme),
     uri_data(path, Components, Path),
-    atomic_list_concat(['',_Project,Pack,archive,File], /, Path),
+    github_archive_path(Archive,Pack,File),
+    atomic_list_concat(Archive, /, Path),
     file_name_extension(Tag, Ext, File),
     github_archive_extension(Ext),
     tag_version(Tag, Version),
     !.
+
+github_archive_path(['',_User,Pack,archive,File],Pack,File).
+github_archive_path(['',_User,Pack,archive,refs,tags,File],Pack,File).
 
 github_archive_extension(tgz).
 github_archive_extension(zip).
@@ -1712,12 +1528,6 @@ version([H|T]) -->
     ->  version(T)
     ;   { T = [] }
     ).
-
-integer(H)    --> digit(D0), digits(L), { number_codes(H, [D0|L]) }.
-digit(D)      --> [D], { code_type(D, digit) }.
-digits([H|T]) --> digit(H), !, digits(T).
-digits([])    --> [].
-
 
                  /*******************************
                  *       QUERY CENTRAL DB       *
@@ -2174,128 +1984,29 @@ version_pack(pack(VersionAtom,URLs,SubDeps),
     atom_version(VersionAtom, Version).
 
 
-                 /*******************************
-                 *          RUN PROCESSES       *
-                 *******************************/
 
-%!  run_process(+Executable, +Argv, +Options) is det.
+%!  pack_attach(+Dir, +Options) is det.
 %
-%   Run Executable.  Defined options:
+%   Attach a single package in Dir.  The Dir is expected to contain
+%   the file `pack.pl` and a `prolog` directory.  Options processed:
 %
-%     * directory(+Dir)
-%     Execute in the given directory
-%     * output(-Out)
-%     Unify Out with a list of codes representing stdout of the
-%     command.  Otherwise the output is handed to print_message/2
-%     with level =informational=.
-%     * error(-Error)
-%     As output(Out), but messages are printed at level =error=.
-%     * env(+Environment)
-%     Environment passed to the new process.
+%     - duplicate(+Action)
+%     What to do if the same package is already installed in a different
+%     directory.  Action is one of
+%       - warning
+%       Warn and ignore the package
+%       - keep
+%       Silently ignore the package
+%       - replace
+%       Unregister the existing and insert the new package
+%     - search(+Where)
+%     Determines the order of searching package library directories.
+%     Default is `last`, alternative is `first`.
+%
+%   @see attach_packs/2 to attach multiple packs from a directory.
 
-run_process(Executable, Argv, Options) :-
-    \+ option(output(_), Options),
-    \+ option(error(_), Options),
-    current_prolog_flag(unix, true),
-    current_prolog_flag(threads, true),
-    !,
-    process_create_options(Options, Extra),
-    process_create(Executable, Argv,
-                   [ stdout(pipe(Out)),
-                     stderr(pipe(Error)),
-                     process(PID)
-                   | Extra
-                   ]),
-    thread_create(relay_output([output-Out, error-Error]), Id, []),
-    process_wait(PID, Status),
-    thread_join(Id, _),
-    (   Status == exit(0)
-    ->  true
-    ;   throw(error(process_error(process(Executable, Argv), Status), _))
-    ).
-run_process(Executable, Argv, Options) :-
-    process_create_options(Options, Extra),
-    setup_call_cleanup(
-        process_create(Executable, Argv,
-                       [ stdout(pipe(Out)),
-                         stderr(pipe(Error)),
-                         process(PID)
-                       | Extra
-                       ]),
-        (   read_stream_to_codes(Out, OutCodes, []),
-            read_stream_to_codes(Error, ErrorCodes, []),
-            process_wait(PID, Status)
-        ),
-        (   close(Out),
-            close(Error)
-        )),
-    print_error(ErrorCodes, Options),
-    print_output(OutCodes, Options),
-    (   Status == exit(0)
-    ->  true
-    ;   throw(error(process_error(process(Executable, Argv), Status), _))
-    ).
-
-process_create_options(Options, Extra) :-
-    option(directory(Dir), Options, .),
-    (   option(env(Env), Options)
-    ->  Extra = [cwd(Dir), env(Env)]
-    ;   Extra = [cwd(Dir)]
-    ).
-
-relay_output([]) :- !.
-relay_output(Output) :-
-    pairs_values(Output, Streams),
-    wait_for_input(Streams, Ready, infinite),
-    relay(Ready, Output, NewOutputs),
-    relay_output(NewOutputs).
-
-relay([], Outputs, Outputs).
-relay([H|T], Outputs0, Outputs) :-
-    selectchk(Type-H, Outputs0, Outputs1),
-    (   at_end_of_stream(H)
-    ->  close(H),
-        relay(T, Outputs1, Outputs)
-    ;   read_pending_codes(H, Codes, []),
-        relay(Type, Codes),
-        relay(T, Outputs0, Outputs)
-    ).
-
-relay(error,  Codes) :-
-    set_prolog_flag(message_context, []),
-    print_error(Codes, []).
-relay(output, Codes) :-
-    print_output(Codes, []).
-
-print_output(OutCodes, Options) :-
-    option(output(Codes), Options),
-    !,
-    Codes = OutCodes.
-print_output(OutCodes, _) :-
-    print_message(informational, pack(process_output(OutCodes))).
-
-print_error(OutCodes, Options) :-
-    option(error(Codes), Options),
-    !,
-    Codes = OutCodes.
-print_error(OutCodes, _) :-
-    phrase(classify_message(Level), OutCodes, _),
-    print_message(Level, pack(process_output(OutCodes))).
-
-classify_message(error) -->
-    string(_), "fatal:",
-    !.
-classify_message(error) -->
-    string(_), "error:",
-    !.
-classify_message(warning) -->
-    string(_), "warning:",
-    !.
-classify_message(informational) -->
-    [].
-
-string([]) --> [].
-string([H|T]) --> [H], string(T).
+pack_attach(Dir, Options) :-
+    '$pack_attach'(Dir, Options).
 
 
                  /*******************************
@@ -2452,7 +2163,7 @@ message(install_downloaded(File)) -->
       size_file(File, Size) },
     [ 'Install "~w" (~D bytes)'-[Base, Size] ].
 message(git_post_install(PackDir, Pack)) -->
-    (   { is_foreign_pack(PackDir) }
+    (   { is_foreign_pack(PackDir, _) }
     ->  [ 'Run post installation scripts for pack "~w"'-[Pack] ]
     ;   [ 'Activate pack "~w"'-[Pack] ]
     ).
@@ -2493,9 +2204,10 @@ message(server_reply(exception(E))) -->
     [ 'Server reported the following error:'-[], nl ],
     '$messages':translate_message(E).
 message(cannot_create_dir(Alias)) -->
-    { setof(PackDir,
-            absolute_file_name(Alias, PackDir, [solutions(all)]),
-            PackDirs)
+    { findall(PackDir,
+              absolute_file_name(Alias, PackDir, [solutions(all)]),
+              PackDirs0),
+      sort(PackDirs0, PackDirs)
     },
     [ 'Cannot find a place to create a package directory.'-[],
       'Considered:'-[]
@@ -2518,9 +2230,6 @@ message(pack(no_upgrade_info(Pack))) -->
 
 candidate_dirs([]) --> [].
 candidate_dirs([H|T]) --> [ nl, '    ~w'-[H] ], candidate_dirs(T).
-
-message(no_mingw) -->
-    [ 'Cannot find MinGW and/or MSYS.'-[] ].
 
                                                 % Questions
 message(resolve_remove) -->

@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual: Section 2.7</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual: Section 2.7</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -388,17 +388,17 @@ useful functionality is its cross-referencing function.
 <pre class="code">
 ?- explain(subset(_,_)).
 "subset(_, _)" is a compound term
-        Referenced from 2-th clause of lists:subset/2
-        Referenced from 46-th clause of prolog_xref:imported/3
-        Referenced from 68-th clause of prolog_xref:imported/3
+    from 2-th clause of lists:subset/2
+    Referenced from 46-th clause of prolog_xref:imported/3
+    Referenced from 68-th clause of prolog_xref:imported/3
 lists:subset/2 is a predicate defined in
-        /staff/jan/lib/pl-5.6.17/library/lists.pl:307
-        Referenced from 2-th clause of lists:subset/2
-        Possibly referenced from 2-th clause of lists:subset/2
+    /staff/jan/lib/pl-5.6.17/library/lists.pl:307
+    Referenced from 2-th clause of lists:subset/2
+    Possibly referenced from 2-th clause of lists:subset/2
 </pre>
 
-<p>Note that the help-tool for XPCE provides a nice graphical 
-cross-referencer.
+<p>Note that PceEmacs can jump to definitions and <a class="pred" href="xref.html#gxref/0">gxref/0</a> 
+can be used for an overview of dependencies.
 
 <dl class="latex">
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="explain/1"><strong>explain</strong>(<var>@Term</var>)</a></dt>
@@ -410,7 +410,8 @@ describes the predicate as well as possible references to it. See also <a class=
 <dt class="pubdef"><span class="pred-tag">[nondet]</span><a id="explain/2"><strong>explain</strong>(<var>@Term, 
 -Explanation</var>)</a></dt>
 <dd class="defbody">
-True when <var>Explanation</var> is an explanation of <var>Term</var>.
+True when <var>Explanation</var> is an explanation of <var>Term</var>. 
+The explaination is a list of elements that is printed using <code>print_message(information, explain(Explanation))</code>.
 </dd>
 </dl>
 

@@ -3,8 +3,9 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2000-2020, University of Amsterdam
-                              Vu University Amsterdam
+    Copyright (c)  2000-2022, University of Amsterdam
+                              VU University Amsterdam
+			      SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -32,6 +33,8 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 */
+
+//#warning "SWI-cpp.h is obsolete and replaced by SWI-cpp2.h"
 
 #ifndef _SWI_CPP_H
 #define _SWI_CPP_H
@@ -78,6 +81,14 @@ public:
   }
   PlFunctor(const wchar_t *name, ARITY_T arity)
   { functor = PL_new_functor(PL_new_atom_wchars(wcslen(name), name), arity);
+  }
+
+  operator functor_t(void) const
+  { return functor;
+  }
+
+  int operator ==(functor_t to) const
+  { return functor == to;
   }
 };
 
@@ -151,6 +162,8 @@ public:
   operator wchar_t *(void) const;
   operator long(void) const;
   operator int(void) const;
+  operator uint32_t(void) const;
+  operator bool(void) const;
   operator double(void) const;
   operator PlAtom(void) const;
   operator void *(void) const;
@@ -216,13 +229,21 @@ class PlTermv
 {
 public:
   term_t a0;
-  int    size;
+  size_t size;
 
   PlTermv(int n)
   { a0   = PL_new_term_refs(n);
-    size = n;
+    size = static_cast<size_t>(n);
   }
   PlTermv(int n, term_t t0)
+  { a0   = t0;
+    size = static_cast<size_t>(n);
+  }
+  PlTermv(size_t n)
+  { a0   = PL_new_term_refs(static_cast<int>(n));
+    size = n;
+  }
+  PlTermv(size_t n, term_t t0)
   { a0   = t0;
     size = n;
   }
@@ -234,7 +255,7 @@ public:
   PlTermv(PlTerm m0, PlTerm m1, PlTerm m2, PlTerm m3);
   PlTermv(PlTerm m0, PlTerm m1, PlTerm m2, PlTerm m3, PlTerm m4);
 
-  PlTerm operator [](int n) const;
+  PlTerm operator [](size_t n) const;
 };
 
 		 /*******************************
@@ -303,8 +324,8 @@ public:
   operator const char *(void);
   operator const wchar_t *(void);
 
-  int plThrow()
-  { return PL_raise_exception(ref);
+  foreign_t plThrow()
+  { return static_cast<foreign_t>(PL_raise_exception(ref));
   }
 
   void cppThrow();
@@ -417,12 +438,12 @@ class PlTermvDomainError : public PlException
 {
 public:
 
-  PlTermvDomainError(int size, int n) :
+  PlTermvDomainError(size_t size, size_t n) :
     PlException(PlCompound("error",
 			   PlTermv(PlCompound("domain_error",
 					      PlTermv(PlCompound("argv",
 								 size),
-						      PlTerm((long)n))),
+						      PlTerm(static_cast<long>(n)))),
 				   PlTerm())))
   {
   }
@@ -449,7 +470,7 @@ PlTerm::PlTerm(const char *text)
 __inline
 PlTerm::PlTerm(const wchar_t *text)
 { if ( !(ref = PL_new_term_ref()) ||
-       !PL_unify_wchars(ref, PL_ATOM, (size_t)-1, text) )
+       !PL_unify_wchars(ref, PL_ATOM, static_cast<size_t>(-1), text) )
     throw PlResourceError();
 }
 
@@ -500,7 +521,7 @@ PlString::PlString(const char *text, size_t len) : PlTerm()
 
 __inline
 PlString::PlString(const wchar_t *text) : PlTerm()
-{ if ( !PL_unify_wchars(ref, PL_STRING, (size_t)-1, text) )
+{ if ( !PL_unify_wchars(ref, PL_STRING, static_cast<size_t>(-1), text) )
     throw PlResourceError();
 }
 
@@ -524,13 +545,13 @@ PlCharList::PlCharList(const char *text) : PlTerm()
 
 __inline
 PlCodeList::PlCodeList(const wchar_t *text) : PlTerm()
-{ if ( !PL_unify_wchars(ref, PL_CODE_LIST, (size_t)-1, text) )
+{ if ( !PL_unify_wchars(ref, PL_CODE_LIST, static_cast<size_t>(-1), text) )
     throw PlResourceError();
 }
 
 __inline
 PlCharList::PlCharList(const wchar_t *text) : PlTerm()
-{ if ( !PL_unify_wchars(ref, PL_CHAR_LIST, (size_t)-1, text) )
+{ if ( !PL_unify_wchars(ref, PL_CHAR_LIST, static_cast<size_t>(-1), text) )
     throw PlResourceError();
 }
 
@@ -645,14 +666,14 @@ public:
   qid_t qid;
 
   PlQuery(predicate_t pred, const PlTermv &av)
-  { qid = PL_open_query((module_t)0, PL_Q_PASS_EXCEPTION, pred, av.a0);
+  { qid = PL_open_query(static_cast<module_t>(0), PL_Q_PASS_EXCEPTION, pred, av.a0);
     if ( !qid )
       throw PlResourceError();
   }
   PlQuery(const char *name, const PlTermv &av)
-  { predicate_t p = PL_predicate(name, av.size, "user");
+  { predicate_t p = PL_predicate(name, static_cast<int>(av.size), "user");
 
-    qid = PL_open_query((module_t)0, PL_Q_PASS_EXCEPTION, p, av.a0);
+    qid = PL_open_query(static_cast<module_t>(0), PL_Q_PASS_EXCEPTION, p, av.a0);
     if ( !qid )
       throw PlResourceError();
   }
@@ -762,6 +783,24 @@ __inline PlTerm::operator int(void) const
   throw PlTypeError("integer", ref);
 }
 
+__inline PlTerm::operator uint32_t(void) const
+{ int64_t v;
+
+  if ( PL_get_int64(ref, &v) && v >= 0 && v <= UINT32_MAX )
+    return v;
+
+  throw PlTypeError("uint32_t", ref);
+}
+
+__inline PlTerm::operator bool(void) const
+{ int v;
+
+  if ( PL_get_bool(ref, &v) )
+    return v;
+
+  throw PlTypeError("bool", ref);
+}
+
 __inline PlTerm::operator double(void) const
 { double v;
 
@@ -799,9 +838,9 @@ PlTerm::operator [](ARITY_T index) const
     return t;
 
   if ( !PL_is_compound(ref) )
-    throw PlTypeError("compound", ref);
-  else
-  { if ( !PL_put_integer(t.ref, index) )
+  { throw PlTypeError("compound", ref);
+  } else
+  { if ( !PL_put_uint64(t.ref, index) )
       throw PlResourceError();
 
     if ( index < 1 )
@@ -866,7 +905,7 @@ __inline int PlTerm::operator =(const char *v)		/* term = atom */
 }
 
 __inline int PlTerm::operator =(const wchar_t *v)	/* term = atom */
-{ int rc = PL_unify_wchars(ref, PL_ATOM, (size_t)-1, v);
+{ int rc = PL_unify_wchars(ref, PL_ATOM, static_cast<size_t>(-1), v);
   term_t ex;
 
   if ( !rc && (ex=PL_exception(0)) )
@@ -1098,8 +1137,8 @@ __inline PlTermv::PlTermv(PlTerm m0, PlTerm m1, PlTerm m2,
 
 
 __inline PlTerm
-PlTermv::operator [](int n) const
-{ if ( n < 0 || n >= size )
+PlTermv::operator [](size_t n) const
+{ if ( n >= size )
     throw PlTermvDomainError(size, n);
 
   return PlTerm(a0+n);
@@ -1125,7 +1164,7 @@ __inline PlException::operator const char *(void)
   av[0] = PlTerm(ref);
   PlQuery q("$messages", "message_to_string", av);
   if ( q.next_solution() )
-    return (char *)av[1];
+    return static_cast<char*>(av[1]);
 #endif
   return "[ERROR: Failed to generate message.  Internal error]\n";
 }
@@ -1146,7 +1185,7 @@ __inline PlException::operator const wchar_t *(void)
   av[0] = PlTerm(ref);
   PlQuery q("$messages", "message_to_string", av);
   if ( q.next_solution() )
-    return (wchar_t *)av[1];
+    return static_cast<wchar_t*>(av[1]);
 #endif
   return L"[ERROR: Failed to generate message.  Internal error]\n";
 }
@@ -1235,7 +1274,7 @@ public:
 
   PlEngine(char *av0)
   { int ac = 0;
-    char **av = (char **)malloc(sizeof(char *) * 2);
+    char **av = static_cast<char**>(malloc(sizeof(char *) * 2));
 
     av[ac++] = av0;
 

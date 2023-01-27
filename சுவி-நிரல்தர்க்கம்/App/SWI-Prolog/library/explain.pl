@@ -1,10 +1,11 @@
 /*  Part of SWI-Prolog
 
     Author:        Jan Wielemaker
-    E-mail:        J.Wielemaker@vu.nl
+    E-mail:        jan@swi-prolog.org
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  1985-2018, University of Amsterdam,
+    Copyright (c)  1985-2021, University of Amsterdam,
                               VU University Amsterdam
+                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -39,6 +40,7 @@
           ]).
 :- autoload(library(apply),[maplist/2,maplist/3]).
 :- autoload(library(lists),[flatten/2]).
+:- autoload(library(prolog_code), [pi_head/2]).
 
 :- if(exists_source(library(pldoc/man_index))).
 :- autoload(library(pldoc/man_index), [man_object_property/2]).
@@ -49,20 +51,20 @@
 The   library(explain)   describes   prolog-terms.   The   most   useful
 functionality is its cross-referencing function.
 
-==
+```
 ?- explain(subset(_,_)).
 "subset(_, _)" is a compound term
-        Referenced from 2-th clause of lists:subset/2
-        Referenced from 46-th clause of prolog_xref:imported/3
-        Referenced from 68-th clause of prolog_xref:imported/3
+    from 2-th clause of lists:subset/2
+    Referenced from 46-th clause of prolog_xref:imported/3
+    Referenced from 68-th clause of prolog_xref:imported/3
 lists:subset/2 is a predicate defined in
-        /staff/jan/lib/pl-5.6.17/library/lists.pl:307
-        Referenced from 2-th clause of lists:subset/2
-        Possibly referenced from 2-th clause of lists:subset/2
-==
+    /staff/jan/lib/pl-5.6.17/library/lists.pl:307
+    Referenced from 2-th clause of lists:subset/2
+    Possibly referenced from 2-th clause of lists:subset/2
+```
 
-Note  that  the  help-tool  for   XPCE    provides   a   nice  graphical
-cross-referencer.
+Note that PceEmacs can jump to definitions   and gxref/0 can be used for
+an overview of dependencies.
 */
 
 %!  explain(@Term) is det
@@ -74,7 +76,7 @@ cross-referencer.
 
 explain(Item) :-
     explain(Item, Explanation),
-    writeln(Explanation),
+    print_message(information, explain(Explanation)),
     fail.
 explain(_).
 
@@ -84,56 +86,53 @@ explain(_).
 
 %!  explain(@Term, -Explanation) is nondet.
 %
-%   True when Explanation is an explanation of Term.
+%   True when Explanation is an explanation of Term. The explaination is
+%   a list of elements that  is printed using print_message(information,
+%   explain(Explanation)).
 
-explain(Var, Explanation) :-
+explain(Var, [isa(Var, 'unbound variable')]) :-
     var(Var),
-    !,
-    utter(Explanation, '"~w" is an unbound variable', [Var]).
-explain(I, Explanation) :-
+    !.
+explain(I, [isa(I, 'an integer')]) :-
     integer(I),
-    !,
-    utter(Explanation, '"~w" is an integer', [I]).
-explain(F, Explanation) :-
+    !.
+explain(F, [isa(F, 'a floating point number')]) :-
     float(F),
-    !,
-    utter(Explanation, '"~w" is a floating point number', [F]).
-explain(S, Explanation) :-
+    !.
+explain(Q, [isa(Q, 'a rational (Q) number')]) :-
+    rational(Q),
+    !.
+explain(S, [isa(S, 'a string')]) :-
     string(S),
-    !,
-    utter(Explanation, '"~w" is a string', S).
-explain([], Explanation) :-
-    !,
-    utter(Explanation, '"[]" is a special constant denoting an empty list', []).
-explain(A, Explanation) :-
-    atom(A),
-    utter(Explanation, '"~w" is an atom', [A]).
+    !.
+explain([], [isa([], 'a special constant denoting an empty list')]) :-
+    !.
+explain(A, [isa(A, 'an atom')]) :-
+    atom(A).
 explain(A, Explanation) :-
     atom(A),
     current_op(Pri, F, A),
     op_type(F, Type),
-    utter(Explanation, '"~w" is a ~w (~w) operator of priority ~d',
-          [A, Type, F, Pri]).
+    Explanation = [ isa(A, 'a ~w (~w) operator of priority ~d'-[Type, F, Pri]) ].
 explain(A, Explanation) :-
     atom(A),
     !,
     explain_atom(A, Explanation).
 explain([H|T], Explanation) :-
+    List = [H|T],
     is_list(T),
     !,
-    List = [H|T],
     length(List, L),
-    (   utter(Explanation, '"~p" is a proper list with ~d elements',
-              [List, L])
+    (   Explanation = [ isa(List, 'a proper list with ~d elements'-[L]) ]
     ;   maplist(printable, List),
-        utter(Explanation, '~t~8|Text is "~s"',  [List])
+        Explanation = [ indent, 'Text is "~s"'-[List] ]
     ).
-explain([H|T], Explanation) :-
+explain(List, Explanation) :-
+    List = [_|_],
     !,
-    length([H|T], L),
+    length(List, L),
     !,
-    utter(Explanation, '"~p" is a not-closed list with ~d elements',
-          [[H|T], L]).
+    Explanation = [isa(List, 'is a not-closed list with ~d elements'-[L])].
 explain(Name/Arity, Explanation) :-
     atom(Name),
     integer(Arity),
@@ -154,10 +153,15 @@ explain(Module:Head, Explanation) :-
     callable(Head),
     !,
     explain_predicate(Module:Head, Explanation).
+explain(Dict, Explanation) :-
+    is_dict(Dict, Tag),
+    !,
+    Explanation = [isa(Dict, 'a dict with tag ~q'-[Tag]) ].
 explain(Term, Explanation) :-
+    compound(Term),
+    compound_name_arity(Term, _Name, Arity),
     numbervars(Term, 0, _, [singletons(true)]),
-    utter(Explanation, '"~W" is a compound term',
-          [Term, [quoted(true), numbervars(true)]]).
+    Explanation = [isa(Term, 'is a compound term with arity ~D'-[Arity])].
 explain(Term, Explanation) :-
     explain_functor(Term, Explanation).
 
@@ -190,7 +194,8 @@ op_type(X, postfix) :-
 
 printable(C) :-
     integer(C),
-    between(32, 126, C).
+    code_type(C, graph).
+
 
                 /********************************
                 *             ATOMS             *
@@ -224,8 +229,7 @@ explain_functor(Head, Explanation) :-
 explain_functor(Head, Explanation) :-
     predicate_property(M:Head, undefined),
     (   functor(Head, N, A),
-        utter(Explanation,
-              '~w:~w/~d is an undefined predicate', [M,N,A])
+        Explanation = [ pi(M:N/A), 'is an undefined predicate' ]
     ;   referenced(M:Head, Explanation)
     ).
 
@@ -234,48 +238,43 @@ explain_functor(Head, Explanation) :-
                 *           PREDICATE           *
                 *********************************/
 
-lproperty(built_in,     ' built-in', []).
-lproperty(dynamic,      ' dynamic', []).
-lproperty(multifile,    ' multifile', []).
-lproperty(transparent,  ' meta', []).
+lproperty(built_in,     [' built-in']).
+lproperty(dynamic,      [' dynamic']).
+lproperty(multifile,    [' multifile']).
+lproperty(transparent,  [' meta']).
 
-tproperty(imported_from(Module), ' imported from module ~w', [Module]).
-tproperty(file(File),           ' defined in~n~t~8|~w', [File]).
-tproperty(line_count(Number),   ':~d', [Number]).
-tproperty(autoload,             ' that can be autoloaded', []).
-
-combine_utterances(Pairs, Explanation) :-
-    maplist(first, Pairs, Fmts),
-    atomic_list_concat(Fmts, Format),
-    maplist(second, Pairs, ArgList),
-    flatten(ArgList, Args),
-    utter(Explanation, Format, Args).
-
-first(A-_B, A).
-second(_A-B, B).
+tproperty(Pred, [' imported from module ', module(Module)]) :-
+    predicate_property(Pred, imported(Module)).
+tproperty(Pred, [' defined in ', url(File:Line)]) :-
+    predicate_property(Pred, file(File)),
+    predicate_property(Pred, line_count(Line)).
+tproperty(Pred, [' that can be autoloaded']) :-
+    predicate_property(Pred, autoload).
 
 %!  explain_predicate(:Head, -Explanation) is det.
 
 explain_predicate(Pred, Explanation) :-
     Pred = Module:Head,
     functor(Head, Name, Arity),
-
     (   predicate_property(Pred, undefined)
-    ->  utter(Explanation,
-              '~w:~w/~d is an undefined predicate', [Module,Name,Arity])
+    ->  Explanation = [ pi(Module:Name/Arity),
+                        ansi([bold,fg(default)], ' is an undefined predicate', [])
+                      ]
     ;   (   var(Module)
-        ->  U0 = '~w/~d is a' - [Name, Arity]
-        ;   U0 = '~w:~w/~d is a' - [Module, Name, Arity]
+        ->  U0 = [ pi(Name/Arity),
+                   ansi([bold,fg(default)], ' is a', [])
+                 ]
+        ;   U0 = [ pi(Module:Name/Arity),
+                   ansi([bold,fg(default)], ' is a', [])
+                 ]
         ),
-        findall(Fmt-Arg, (lproperty(Prop, Fmt, Arg),
-                          predicate_property(Pred, Prop)),
+        findall(Utter, (lproperty(Prop, Utter),
+                        predicate_property(Pred, Prop)),
                 U1),
-        U2 = ' predicate' - [],
-        findall(Fmt-Arg, (tproperty(Prop, Fmt, Arg),
-                          predicate_property(Pred, Prop)),
+        U2 = [ansi([bold,fg(default)], ' predicate', []) ],
+        findall(Utter, tproperty(Pred, Utter),
                 U3),
-        flatten([U0, U1, U2, U3], Utters),
-        combine_utterances(Utters, Explanation)
+        flatten([U0, U1, U2, U3], Explanation)
     ).
 :- if(current_predicate(man_object_property/2)).
 explain_predicate(Pred, Explanation) :-
@@ -285,7 +284,7 @@ explain_predicate(Pred, Explanation) :-
     source_file(Pred, File),
     current_prolog_flag(home, Home),
     sub_atom(File, 0, _, _, Home),
-    utter(Explanation, '~t~8|Summary: ``~w''''', [Summary]).
+    Explanation = [indent, 'Summary: "~w"'-[Summary] ].
 :- endif.
 explain_predicate(Pred, Explanation) :-
     referenced(Pred, Explanation).
@@ -330,7 +329,8 @@ utter_referenced(_Module:lazy_get_method(_,_,_), _, _, _, _) :-
     current_prolog_flag(xpce, true),
     !,
     fail.
-utter_referenced(pce_xref:exported(_,_), _, _, _, _) :-
+utter_referenced(From, _, _, _, _) :-
+    hide_reference(From),
     !,
     fail.
 utter_referenced(pce_xref:defined(_,_,_), _, _, _, _) :-
@@ -344,31 +344,107 @@ utter_referenced(pce_principal:send_implementation(_, _, _),
     current_prolog_flag(xpce, true),
     !,
     xpce_method_id(Ref, Id),
-    utter(Explanation, '~t~8|~w from ~w', [Text, Id]).
+    Explanation = [indent, '~w from ~w'-[Text, Id]].
 utter_referenced(pce_principal:get_implementation(Id, _, _, _),
                  _, Ref, Text, Explanation) :-
     current_prolog_flag(xpce, true),
     !,
     xpce_method_id(Ref, Id),
-    utter(Explanation, '~t~8|~w from ~w', [Text, Id]).
-utter_referenced(Module:Head, N, _Ref, Text, Explanation) :-
-    functor(Head, Name, Arity),
-    utter(Explanation,
-          '~t~8|~w from ~d-th clause of ~w:~w/~d',
-          [Text, N, Module, Name, Arity]).
+    Explanation = [indent, '~w from ~w'-[Text, Id]].
+utter_referenced(Head, N, Ref, Text, Explanation) :-
+    clause_property(Ref, file(File)),
+    clause_property(Ref, line_count(Line)),
+    !,
+    pi_head(PI, Head),
+    Explanation = [ indent,
+                    '~w from ~d-th clause of '-[Text, N],
+                    pi(PI), ' at ', url(File:Line)
+                  ].
+utter_referenced(Head, N, _Ref, Text, Explanation) :-
+    pi_head(PI, Head),
+    Explanation = [ indent,
+                    '~w from ~d-th clause of '-[Text, N],
+                    pi(PI)
+                  ].
 
 xpce_method_id(Ref, Id) :-
     clause(Head, _Body, Ref),
     strip_module(Head, _, H),
     arg(1, H, Id).
 
+hide_reference(pce_xref:exported(_,_)).
+hide_reference(pce_xref:defined(_,_,_)).
+hide_reference(pce_xref:called(_,_,_)).
+hide_reference(prolog_xref:called(_,_,_,_,_)).
+hide_reference(prolog_xref:pred_mode(_,_,_)).
+hide_reference(prolog_xref:exported(_,_)).
+hide_reference(prolog_xref:dynamic(_,_,_)).
+hide_reference(prolog_xref:imported(_,_,_)).
+hide_reference(prolog_xref:pred_comment(_,_,_,_)).
+hide_reference(_:'$mode'(_,_)).
+hide_reference(_:'$pldoc'(_,_,_,_)).
+hide_reference(prolog_manual_index:man_index(_,_,_,_,_)).
 
 
                 /********************************
-                *             UTTER            *
+                *           MESSAGES            *
                 *********************************/
 
-utter(Explanation, Fmt, Args) :-
-    format(string(Explanation), Fmt, Args).
+:- multifile
+    prolog:message//1.
 
+prolog:message(explain(Explanation)) -->
+    report(Explanation).
 
+report(Explanation) -->
+    { string(Explanation),
+      !,
+      split_string(Explanation, "\n", "", Lines)
+    },
+    lines(Lines).
+report(Explanation) -->
+    { is_list(Explanation) },
+    report_list(Explanation).
+
+lines([]) -->
+    [].
+lines([H]) -->
+    !,
+    [ '~s'-[H] ].
+lines([H|T]) -->
+    [ '~s'-[H], nl ],
+    lines(T).
+
+report_list([]) -->
+    [].
+report_list([H|T]) -->
+    report1(H),
+    report_list(T).
+
+report1(indent) -->
+    !,
+    [ '~t~6|'-[] ].
+report1(String) -->
+    { atomic(String) },
+    [ '~w'-[String] ].
+report1(Fmt-Args) -->
+    !,
+    [ Fmt-Args ].
+report1(url(Location)) -->
+    [ url(Location) ].
+report1(url(URL, Label)) -->
+    [ url(URL, Label) ].
+report1(pi(PI)) -->
+    [ ansi(code, '~q', [PI]) ].
+report1(ansi(Style, Fmt, Args)) -->
+    [ ansi(Style, Fmt, Args) ].
+report1(isa(Obj, Fmt-Args)) -->
+    !,
+    [ ansi(code, '~p', [Obj]),
+      ansi([bold,fg(default)], ' is ', []),
+      ansi([bold,fg(default)], Fmt, Args)
+    ].
+report1(isa(Obj, Descr)) -->
+    [ ansi(code, '~p', [Obj]),
+      ansi([bold,fg(default)], ' is ~w', [Descr])
+    ].

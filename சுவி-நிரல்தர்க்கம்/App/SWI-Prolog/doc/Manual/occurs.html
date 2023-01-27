@@ -2,11 +2,11 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual: Section A.25</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual: Section A.28</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
-<link rel="previous" href="www_browser.html">
+<link rel="previous" href="wwwbrowser.html">
 <link rel="next" href="option.html">
 
 <style type="text/css">
@@ -230,10 +230,10 @@ table.frame-box
 <a class="nav" href="Contents.html"><img src="index.gif" alt="Contents"></a>
 <a class="nav" href="DocIndex.html"><img src="yellow_pages.gif" alt="Index"></a>
 <a class="nav" href="summary.html"><img src="info.gif" alt="Summary"></a>
-<a class="nav" href="www_browser.html"><img src="prev.gif" alt="Previous"></a>
+<a class="nav" href="wwwbrowser.html"><img src="prev.gif" alt="Previous"></a>
 <a class="nav" href="option.html"><img src="next.gif" alt="Next"></a>
 </div>
-<h2 id="sec:occurs"><a id="sec:A.25"><span class="sec-nr">A.25</span> <span class="sec-title">library(occurs): 
+<h2 id="sec:occurs"><a id="sec:A.28"><span class="sec-nr">A.28</span> <span class="sec-title">library(occurs): 
 Finding and counting sub-terms</span></a></h2>
 
 <p><a id="sec:occurs"></a>
@@ -285,7 +285,19 @@ Generates (on backtracking) all subterms of <var>Term</var>.</dd>
 <dt class="pubdef"><a id="sub_var/2"><strong>sub_var</strong>(<var>-Sub, 
 +Term</var>)</a></dt>
 <dd class="defbody">
-Generates (on backtracking) all subterms (<code>==</code>) of <var>Term</var>.
+Generates (on backtracking) all subterms (<code>==</code>) of <var>Term</var>.</dd>
+<dt class="pubdef"><span class="pred-tag">[det]</span><a id="sub_term_shared_variables/3"><strong>sub_term_shared_variables</strong>(<var>+Sub, 
++Term, -Vars</var>)</a></dt>
+<dd class="defbody">
+If <var>Sub</var> is a sub term of <var>Term</var>, <var>Vars</var> is 
+bound to the list of variables in <var>Sub</var> that also appear 
+outside <var>Sub</var> in <var>Term</var>. Note that if <var>Sub</var> 
+appears twice in <var>Term</var>, its variables are all considered 
+shared.
+
+<p>An example use-case is refactoring a large clause body by introducing 
+intermediate predicates. This predicate can be used to find the 
+arguments that must be passed to the new predicate.
 </dd>
 </dl>
 

@@ -83,7 +83,9 @@
 :- autoload(library(sgml),[xml_quote_cdata/3,xml_quote_attribute/3]).
 :- autoload(library(uri),[uri_encoded/3]).
 :- autoload(library(url),[www_form_encode/2]).
+:- if(exists_source(library(http/http_dispatch))).
 :- autoload(library(http/http_dispatch), [http_location_by_id/2]).
+:- endif.
 
 % Quote output
 :- set_prolog_flag(generate_debug_info, false).
@@ -101,7 +103,8 @@
 
 :- multifile
     expand//1,                      % +HTMLElement
-    expand_attribute_value//1.      % +HTMLAttributeValue
+    expand_attribute_value//1,      % +HTMLAttributeValue
+    html_header_hook/1.             % +Style
 
 
 /** <module> Write HTML text
@@ -1351,8 +1354,17 @@ reply_html_page(Head, Body) :-
 reply_html_page(Style, Head, Body) :-
     html_current_option(content_type(Type)),
     phrase(page(Style, Head, Body), HTML),
+    forall(html_header_hook(Style), true),
     format('Content-type: ~w~n~n', [Type]),
     print_html(HTML).
+
+
+%!  html_header_hook(+Style) is nondet.
+%
+%   This multifile hook  is  called   just  before  the ``Content-type``
+%   header  is  emitted.  It  allows  for  emitting  additional  headers
+%   depending on the first argument of reply_html_page/3.
+
 
 
                  /*******************************
@@ -1590,11 +1602,13 @@ attr_value_colour(_, error).
 location_id(ID, classify) :-
     var(ID),
     !.
+:- if(current_predicate(http_location_for_id/1)).
 location_id(ID, Class) :-
     (   catch(http_location_by_id(ID, Location), _, fail)
     ->  Class = http_location_for_id(Location)
     ;   Class = http_no_location_for_id(ID)
     ).
+:- endif.
 location_id(_, classify).
 
 format_colours(Format, format_string) :- atom(Format), !.

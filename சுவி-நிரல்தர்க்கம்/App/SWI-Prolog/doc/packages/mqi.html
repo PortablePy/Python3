@@ -323,12 +323,13 @@ library connects to that process. This allows the user to see, interact
 with, and debug the Prolog process while the library interacts with it.
 </ul>
 
-<p>Note that the MQI is related to the Pengines library (<b>section ??</b>), 
-but where the Pengines library is focused on a client/server, 
-multi-tenet, sandboxed environment, the MQI is local, single tenet and 
-unconstrained. Thus, when the requirement is to embed Prolog within 
-another programming language "like a library", it can be a good solution 
-for exposing the full power of Prolog with low integration overhead.
+<p>Note that the MQI is related to the <a class="url" href="https://www.swi-prolog.org/pldoc/man?section=pengine-references">Pengines 
+library</a>, but where the Pengines library is focused on a 
+client/server, multi-tenet, sandboxed environment, the MQI is local, 
+single tenet and unconstrained. Thus, when the requirement is to embed 
+Prolog within another programming language "like a library", it can be a 
+good solution for exposing the full power of Prolog with low integration 
+overhead.
 
 <p><h3 id="sec:mqi-python-installation"><a id="sec:1.1"><span class="sec-nr">1.1</span> <span class="sec-title">Installation 
 Steps for Python</span></a></h3>
@@ -389,8 +390,8 @@ Language Differences from the Top Level</span></a></h3>
 
 <p><a id="sec:mqi-toplevel-differences"></a>
 
-<p>The Machine Query Interface is designed to act like using the "top 
-level" (<b>section ??</b>) prompt of SWI Prolog itself (i.e. the "<code>?-</code>" 
+<p>The Machine Query Interface is designed to act like using the <a class="url" href="https://www.swi-prolog.org/pldoc/man?section=quickstart">"top 
+level"</a> prompt of SWI Prolog itself (i.e. the "<code>?-</code>" 
 prompt). If you've built the Prolog part of your application by loading 
 code, running it and debugging it using the normal SWI Prolog top level, 
 integrating it with your native language should be straightforward: 
@@ -443,19 +444,19 @@ using system predicates as defined in the SWI Prolog documentation.
 <li>Every connection to the MQI runs in its own thread, so opening two 
 connections from an application means you are running multithreaded 
 code.
-<li>The SWI Prolog top level does special handling to make residual 
-attributes on variables (<b>section ??</b>) print out in a 
-human-friendly way. MQI instead returns any residuals in a special 
-variable called <code>$residuals</code> that is added to the results.
+<li>The SWI Prolog top level does special handling to make residual <a class="url" href="https://www.swi-prolog.org/pldoc/man?section=attvar">attributes 
+on variables</a> print out in a human-friendly way. MQI instead returns 
+any residuals in a special variable called <code>$residuals</code> that 
+is added to the results.
 <li>Some Prolog extensions do not provide the full answer to a query by 
 means of the variable bindings. The top level does extra work to find 
 where the answers are stored and print them out. All of these extensions 
 have an interface to get to this data as a Prolog term and users of MQI 
-need to do this work themselves. Examples include: Constraint Handling 
-Rules (CHR) (<b>section ??</b>) stores constraints in global variables, 
-Well Founded Semantics (<b>section ??</b>) has the notion of delayed, 
-which is translated into a program that carries the inconsistency if 
-there are conflicting negations, <a class="url" href="https://www.swi-prolog.org/pack/list?p=scasp"><code>s(CASP)</code></a> 
+need to do this work themselves. Examples include: <a class="url" href="https://www.swi-prolog.org/pldoc/man?section=chr">Constraint 
+Handling Rules (CHR)</a> stores constraints in global variables, <a class="url" href="https://www.swi-prolog.org/pldoc/man?section=wfs-toplevel">Well 
+Founded Semantics</a> has the notion of delayed, which is translated 
+into a program that carries the inconsistency if there are conflicting 
+negations, <a class="url" href="https://www.swi-prolog.org/pack/list?p=scasp"><code>s(CASP)</code></a> 
 has a model and justification.
 </ul>
 
@@ -681,8 +682,9 @@ best debugging approach. Standalone mode is designed for this scenario.
 
 <p>As the MQI is a multithreaded application, debugging the running code 
 requires using the multithreaded debugging features of SWI Prolog as 
-described in the section on "Debugging Threads" (<b>section ??</b>) in 
-the SWI Prolog documentation. A typical flow for Standalone Mode is:
+described in the section on <a class="url" href="https://www.swi-prolog.org/pldoc/man?section=threaddebug">"Debugging 
+Threads"</a> in the SWI Prolog documentation. A typical flow for 
+Standalone Mode is:
 
 <p>
 <ol class="latex">
@@ -854,10 +856,10 @@ run with <code>findall()</code> (see <span class="pred-ext">run_async/3</span>
 below to get individual results back iteratively). Each <var>Answer</var> 
 is a list of the assignments of free variables in the answer. A special 
 variable called <code>$residuals</code> will be added to each answer 
-that has residual variable constraints on it (<b>section ??</b>). This 
-will contain a list of all the constraints on all the variables for that 
-answer. If there are no free variables, <var>Answer</var> is an empty 
-list. </td></tr>
+that has residual <a class="url" href="https://www.swi-prolog.org/pldoc/man?section=attvar">variable 
+constraints on it</a>. This will contain a list of all the constraints 
+on all the variables for that answer. If there are no free variables, <var>Answer</var> 
+is an empty list. </td></tr>
 <tr><td><code>false</code> </td><td>The goal failed. </td></tr>
 <tr><td><code>exception(time_limit_exceeded)</code> </td><td>The query 
 timed out. </td></tr>
@@ -1028,8 +1030,8 @@ answer from the query is a successful answer. Whether there are more
 than one <var>Answer</var> in the response depends on the <code>findall</code> 
 setting. Each <var>Answer</var> is a list of the assignments of free 
 variables in the answer. A special variable called <code>$residuals</code> 
-will be added to each answer that has residual variable constraints on 
-it (<b>section ??</b>). This will contain a list of all the constraints 
+will be added to each answer that has residual <a class="url" href="https://www.swi-prolog.org/pldoc/man?section=attvar">variable 
+constraints on it</a>. This will contain a list of all the constraints 
 on all the variables for that answer. If there are no free variables, <var>Answer</var> 
 is an empty list. </td></tr>
 <tr><td><code>false</code> </td><td>The query failed with no answers. </td></tr>

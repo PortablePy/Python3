@@ -2,12 +2,12 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual: Section A.16</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual: Section A.16</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
 <link rel="previous" href="dicts.html">
-<link rel="next" href="gensym.html">
+<link rel="next" href="fastrw.html">
 
 <style type="text/css">
 
@@ -231,7 +231,7 @@ table.frame-box
 <a class="nav" href="DocIndex.html"><img src="yellow_pages.gif" alt="Index"></a>
 <a class="nav" href="summary.html"><img src="info.gif" alt="Summary"></a>
 <a class="nav" href="dicts.html"><img src="prev.gif" alt="Previous"></a>
-<a class="nav" href="gensym.html"><img src="next.gif" alt="Next"></a>
+<a class="nav" href="fastrw.html"><img src="next.gif" alt="Next"></a>
 </div>
 <h2 id="sec:error"><a id="sec:A.16"><span class="sec-nr">A.16</span> <span class="sec-title">library(error): 
 Error generating support</span></a></h2>
@@ -389,11 +389,12 @@ the same name. Below is a brief definition of the other types.
 <tr><td>constant</td><td>Same as <code>atomic</code> </td></tr>
 <tr><td>cyclic</td><td>Cyclic term (rational tree); see <a class="pred" href="typetest.html#cyclic_term/1">cyclic_term/1</a> </td></tr>
 <tr><td>dict</td><td>A dictionary term; see <a class="pred" href="bidicts.html#is_dict/1">is_dict/1</a> </td></tr>
-<tr><td>encoding</td><td>Valid name for a character encoding; see <span class="pred-ext">current_encoding/1</span> </td></tr>
+<tr><td>encoding</td><td>Valid name for a character encoding; see <a class="pred" href="error.html#current_encoding/1">current_encoding/1</a> </td></tr>
 <tr><td>list</td><td>A (non-open) list; see <a class="pred" href="builtinlist.html#is_list/1">is_list/1</a> </td></tr>
 <tr><td>negative_integer</td><td>Integer <var>&lt;</var> 0 </td></tr>
 <tr><td>nonneg</td><td>Integer <code>&gt;=</code> 0 </td></tr>
 <tr><td><code>oneof(L)</code> </td><td>Ground term that is member of L </td></tr>
+<tr><td>pair</td><td>Key-Value pair </td></tr>
 <tr><td>positive_integer</td><td>Integer <var>&gt;</var> 0 </td></tr>
 <tr><td>proper_list</td><td>Same as list </td></tr>
 <tr><td><code>list(Type)</code> </td><td>Proper list with elements of <var>Type</var> </td></tr>
@@ -428,6 +429,10 @@ True if <var>Term</var> satisfies <var>Type</var>.</dd>
 @Term</var>)</a></dt>
 <dd class="defbody">
 True if <var>Term</var> satisfies <var>Type</var>.</dd>
+<dt class="pubdef"><span class="pred-tag">[nondet]</span><a id="current_encoding/1"><strong>current_encoding</strong>(<var>?Name</var>)</a></dt>
+<dd class="defbody">
+True if <var>Name</var> is the name of a supported encoding. See 
+encoding option of e.g., <a class="pred" href="IO.html#open/4">open/4</a>.</dd>
 <dt class="pubdef"><span class="pred-tag">[nondet]</span><a id="current_type/3"><strong>current_type</strong>(<var>?Type, 
 @Var, -Body</var>)</a></dt>
 <dd class="defbody">

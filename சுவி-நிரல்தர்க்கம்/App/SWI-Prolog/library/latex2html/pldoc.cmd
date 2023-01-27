@@ -216,6 +216,9 @@
 \Snequal
 \Shat
 \Sbar
+\Sbarbar
+\SCand
+\SCandand
 \Stimes
 \Spow
 \Splus
@@ -255,6 +258,8 @@
 \Sxor
 \Scons
 \Snil
+\Sssu
+\Smssu
 
 % These are hacks to get the index right
 

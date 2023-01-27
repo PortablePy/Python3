@@ -40,6 +40,8 @@
 :- use_module(library(toc_filesystem)).
 :- use_module(library(pce_report)).
 :- use_module(library(toolbar)).
+% used in load hook: cannot be autoloaded.
+:- use_module(library(trace/util),[canonical_source_file/2]).
 
 :- autoload(browse_xref,
 	    [ x_browse_info/2,
@@ -48,6 +50,8 @@
 	      global_predicate/1
 	    ]).
 :- autoload(library(debug),[debug/3]).
+:- autoload(library(prolog_code), [head_name_arity/3]).
+:- autoload(library(prolog_debug), [nospy/1, spy/1]).
 :- autoload(library(edit),[edit/1]).
 :- autoload(library(help),[help/1]).
 :- autoload(library(lists),[member/2]).
@@ -63,7 +67,6 @@
 	    ]).
 :- autoload(library(prolog_trace),[trace/2,trace/1]).
 :- autoload(library(swi_ide),[prolog_ide/1]).
-:- autoload(library(trace/util),[canonical_source_file/2]).
 :- if(exists_source(library(pldoc/man_index))).
 :- autoload(library(pldoc/man_index),[man_object_property/2]).
 :- endif.
@@ -361,10 +364,10 @@ expand_all(_TF) :->
 split_head(M:Head, Name, Arity, M) :-
     !,
     callable(Head),
-    functor(Head, Name, Arity).
+    head_name_arity(Head, Name, Arity).
 split_head(Head, Name, Arity, @nil) :-
     callable(Head),
-    functor(Head, Name, Arity).
+    head_name_arity(Head, Name, Arity).
 
 make_file_toc_entry(predicate(Head), Key, TE) :-
     split_head(Head, Name, Arity, Module),
@@ -393,10 +396,10 @@ to_summary(_, @default).
 local_predicate_name(M:Head, Label) :-
     !,
     callable(Head),
-    functor(Head, Name, Arity),
+    head_name_arity(Head, Name, Arity),
     atomic_list_concat([M, :, Name, /, Arity], Label).
 local_predicate_name(Head, Label) :-
-    functor(Head, Name, Arity),
+    head_name_arity(Head, Name, Arity),
     atomic_list_concat([Name, /, Arity], Label).
 
 identify(TF) :->
@@ -764,7 +767,7 @@ variable(classification, name,  get, "Class of the predicate").
 
 initialise(P, BrowseId:name, Name:name, Arity:int, Module:[name]*) :->
     default(Module, @nil, M),
-    functor(Head0, Name, Arity),
+    head_name_arity(Head0, Name, Arity),
     (   M == @nil
     ->  Head = Head0
     ;   Head = M:Head0
@@ -800,7 +803,7 @@ head(P, Qualify:[bool], Head:prolog) :<-
     get(P, module, M),
     get(P, name, Name),
     get(P, arity, Arity),
-    functor(Head0, Name, Arity),
+    head_name_arity(Head0, Name, Arity),
     (   M == @nil
     ->  (   Qualify == @on
         ->  (   get(P, file_node, SbPrologFile),

@@ -41,6 +41,7 @@
 	[
 	    do_checks/8
 	]).
+:- use_module(library(error), [type_error/2]).
 :- use_module(library(apply), [maplist/2]).
 :- use_module(bv_q,
 	[
@@ -73,10 +74,11 @@ do_checks(Y,Ty,St,Li,Or,Cl,No,Later) :-
 
 numbers_only(Y) :-
 	(   var(Y)
+	->  true
 	;   rational(Y)
-	;   throw(type_error(_X = Y,2,'a rational number',Y))
-	),
-	!.
+	->  true
+	;   type_error(rational, Y)
+	).
 
 % verify_nonzero(Nonzero,Y)
 %
@@ -85,9 +87,9 @@ numbers_only(Y) :-
 
 verify_nonzero(nonzero,Y) :-
 	(   var(Y)
-	->  (   get_attr(Y,itf,Att)
+	->  (   get_attr(Y,clpqr_itf,Att)
 	    ->  setarg(8,Att,nonzero)
-	    ;   put_attr(Y,itf,t(clpq,n,n,n,n,n,n,nonzero,n,n,n))
+	    ;   put_attr(Y,clpqr_itf,t(clpq,n,n,n,n,n,n,nonzero,n,n,n))
 	    )
 	;   Y =\= 0
 	).

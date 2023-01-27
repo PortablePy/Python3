@@ -3,7 +3,7 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2002-2020, University of Amsterdam
+    Copyright (c)  2002-2022, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
     All rights reserved.
@@ -57,9 +57,11 @@
 :- use_module(http_wrapper).
 :- use_module(http_path).
 
+:- autoload(library(uri), [uri_resolve/3]).
 
 :- predicate_options(http_server/2, 2,
                      [ port(any),
+                       unix_socket(atom),
                        entry_page(atom),
                        tcp_socket(any),
                        workers(positive_integer),
@@ -122,6 +124,7 @@ self-signed SSL certificate.
     accept_hook/2,
     close_hook/1,
     open_client_hook/6,
+    discard_client_hook/1,
     http:create_pool/1,
     http:schedule_workers/1.
 
@@ -137,6 +140,10 @@ self-signed SSL certificate.
 %     Port to bind to.  Address is either a port or a term
 %     Host:Port. The port may be a variable, causing the system
 %     to select a free port.  See tcp_bind/2.
+%
+%     * unix_socket(+Path)
+%     Instead of binding to a TCP port, bind to a _Unix Domain
+%     Socket_ at Path.
 %
 %     * entry_page(+URI)
 %     Affects the message printed while the server is started.
@@ -188,21 +195,39 @@ self-signed SSL certificate.
 %   server for handling sensitive requests.
 
 http_server(Goal, M:Options0) :-
-    option(port(Port), Options0),
+    server_address(Address, Options0),
     !,
-    make_socket(Port, M:Options0, Options),
+    make_socket(Address, M:Options0, Options),
     create_workers(Options),
-    create_server(Goal, Port, Options),
+    create_server(Goal, Address, Options),
     (   option(silent(true), Options0)
     ->  true
     ;   print_message(informational,
-                      httpd_started_server(Port, Options0))
+                      httpd_started_server(Address, Options0))
     ).
-http_server(_Goal, _Options) :-
-    existence_error(option, port).
+http_server(_Goal, _:Options0) :-
+    existence_error(server_address, Options0).
 
+server_address(Address, Options) :-
+    (   option(port(Port), Options)
+    ->  Address = Port
+    ;   option(unix_socket(Path), Options)
+    ->  Address = unix_socket(Path)
+    ).
 
-%!  make_socket(?Port, :OptionsIn, -OptionsOut) is det.
+address_port(_IFace:Port, Port) :- !.
+address_port(unix_socket(Path), Path) :- !.
+address_port(Address, Address) :- !.
+
+tcp_address(Port) :-
+    var(Port),
+    !.
+tcp_address(Port) :-
+    integer(Port),
+    !.
+tcp_address(_Iface:_Port).
+
+%!  make_socket(+Address, :OptionsIn, -OptionsOut) is det.
 %
 %   Create the HTTP server socket and  worker pool queue. OptionsOut
 %   is quaranteed to hold the option queue(QueueId).
@@ -210,26 +235,42 @@ http_server(_Goal, _Options) :-
 %   @arg   OptionsIn   is   qualified   to     allow   passing   the
 %   module-sensitive ssl option argument.
 
-make_socket(Port, Options0, Options) :-
-    make_socket_hook(Port, Options0, Options),
+make_socket(Address, M:Options0, Options) :-
+    tcp_address(Address),
+    make_socket_hook(Address, M:Options0, Options),
     !.
-make_socket(Port, _:Options0, Options) :-
+make_socket(Address, _:Options0, Options) :-
     option(tcp_socket(_), Options0),
     !,
-    make_addr_atom('httpd', Port, Queue),
+    make_addr_atom('httpd', Address, Queue),
     Options = [ queue(Queue)
               | Options0
               ].
-make_socket(Port, _:Options0, Options) :-
+make_socket(Address, _:Options0, Options) :-
+    tcp_address(Address),
+    !,
     tcp_socket(Socket),
     tcp_setopt(Socket, reuseaddr),
-    tcp_bind(Socket, Port),
+    tcp_bind(Socket, Address),
     tcp_listen(Socket, 64),
-    make_addr_atom('httpd', Port, Queue),
+    make_addr_atom('httpd', Address, Queue),
     Options = [ queue(Queue),
                 tcp_socket(Socket)
               | Options0
               ].
+:- if(current_predicate(unix_domain_socket/1)).
+make_socket(Address, _:Options0, Options) :-
+    Address = unix_socket(Path),
+    !,
+    unix_domain_socket(Socket),
+    tcp_bind(Socket, Path),
+    tcp_listen(Socket, 64),
+    make_addr_atom('httpd', Address, Queue),
+    Options = [ queue(Queue),
+                tcp_socket(Socket)
+              | Options0
+              ].
+:- endif.
 
 %!  make_addr_atom(+Scheme, +Address, -Atom) is det.
 %
@@ -240,6 +281,11 @@ make_addr_atom(Scheme, Address, Atom) :-
     phrase(address_parts(Address), Parts),
     atomic_list_concat([Scheme,@|Parts], Atom).
 
+address_parts(Var) -->
+    { var(Var),
+      !,
+      instantiation_error(Var)
+    }.
 address_parts(Atomic) -->
     { atomic(Atomic) },
     !,
@@ -250,6 +296,11 @@ address_parts(Host:Port) -->
 address_parts(ip(A,B,C,D)) -->
     !,
     [ A, '.', B, '.', C, '.', D ].
+address_parts(unix_socket(Path)) -->
+    [Path].
+address_parts(Address) -->
+    { domain_error(http_server_address, Address) }.
+
 
 %!  create_server(:Goal, +Address, +Options) is det.
 %
@@ -280,9 +331,6 @@ scheme(Scheme, Options) :-
     !,
     Scheme = https.
 scheme(http, _).
-
-address_port(_Host:Port, Port) :- !.
-address_port(Port, Port).
 
 autoload_https(https) :-
     \+ clause(accept_hook(_Goal, _Options), _),
@@ -391,7 +439,9 @@ http_current_worker(Port, ThreadID) :-
 accept_server(Goal, Initiator, Options) :-
     catch(accept_server2(Goal, Initiator, Options), http_stop, true),
     thread_self(Thread),
-    retract(current_server(_Port, _, Thread, _Queue, _Scheme, _StartTime)),
+    debug(http(stop), '[~p]: accept server received http_stop', [Thread]),
+    retract(current_server(_Port, _, Thread, Queue, _Scheme, _StartTime)),
+    close_pending_accepts(Queue),
     close_server_socket(Options).
 
 accept_server2(Goal, Initiator, Options) :-
@@ -418,9 +468,12 @@ accept_server3(Goal, Options) :-
     memberchk(queue(Queue), Options),
     debug(http(connection), 'Waiting for connection', []),
     tcp_accept(Socket, Client, Peer),
-    debug(http(connection), 'New HTTP connection from ~p', [Peer]),
-    thread_send_message(Queue, tcp_client(Client, Goal, Peer)),
+    sig_atomic(send_to_worker(Queue, Client, Goal, Peer)),
     http_enough_workers(Queue, accept, Peer).
+
+send_to_worker(Queue, Client, Goal, Peer) :-
+    debug(http(connection), 'New HTTP connection from ~p', [Peer]),
+    thread_send_message(Queue, tcp_client(Client, Goal, Peer)).
 
 accept_rethrow_error(http_stop).
 accept_rethrow_error('$aborted').
@@ -438,6 +491,24 @@ close_server_socket(Options) :-
     !,
     tcp_close_socket(Socket).
 
+%!  close_pending_accepts(+Queue)
+
+close_pending_accepts(Queue) :-
+    (   thread_get_message(Queue, Msg, [timeout(0)])
+    ->  close_client(Msg),
+        close_pending_accepts(Queue)
+    ;   true
+    ).
+
+close_client(tcp_client(Client, _Goal, _0Peer)) =>
+    debug(http(stop), 'Closing connection from ~p during shut-down', [_0Peer]),
+    tcp_close_socket(Client).
+close_client(Msg) =>
+    (   discard_client_hook(Msg)
+    ->  true
+    ;   print_message(warning, http_close_client(Msg))
+    ).
+
 
 %!  http_stop_server(+Port, +Options)
 %
@@ -454,9 +525,11 @@ http_stop_server(Port, _Options) :-
     http_workers(Port, 0),                  % checks Port is ground
     current_server(Port, _, Thread, Queue, _Scheme, _Start),
     retractall(queue_options(Queue, _)),
+    debug(http(stop), 'Signalling HTTP server thread ~p to stop', [Thread]),
     thread_signal(Thread, throw(http_stop)),
     catch(connect(localhost:Port), _, true),
-    thread_join(Thread, _),
+    thread_join(Thread, _0Status),
+    debug(http(stop), 'Joined HTTP server thread ~p (~p)', [Thread, _0Status]),
     message_queue_destroy(Queue).
 
 connect(Address) :-
@@ -1018,13 +1091,18 @@ http_root(Address, Options) -->
     [ '~w'-[URI] ].
 
 landing_page(Host:Port, URI, Options) :-
+    !,
     must_be(atom, Host),
+    must_be(integer, Port),
     http_server_property(Port, scheme(Scheme)),
     (   default_port(Scheme, Port)
     ->  format(atom(Base), '~w://~w', [Scheme, Host])
     ;   format(atom(Base), '~w://~w:~w', [Scheme, Host, Port])
     ),
     entry_page(Base, URI, Options).
+landing_page(unix_socket(Path), URI, _Options) :-
+    !,
+    format(string(URI), 'Unix domain socket "~w"', [Path]).
 landing_page(Port, URI, Options) :-
     landing_page(localhost:Port, URI, Options).
 

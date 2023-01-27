@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -269,9 +269,11 @@ transformation with source layout info</span></a></div>
 compilation</span></a></div>
 <div class="toc-h3"><a class="sec" href="consulting.html#sec:4.3.2"><span class="sec-nr">4.3.2</span> <span class="sec-title">Reloading 
 files, active code and threads</span></a></div>
-<div class="toc-h4"><a class="sec" href="consulting.html#sec:4.3.2.1"><span class="sec-nr">4.3.2.1</span> <span class="sec-title">Compilation 
-of mutually dependent code</span></a></div>
+<div class="toc-h4"><a class="sec" href="consulting.html#sec:4.3.2.1"><span class="sec-nr">4.3.2.1</span> <span class="sec-title">Errors 
+and warnings during compilation</span></a></div>
 <div class="toc-h4"><a class="sec" href="consulting.html#sec:4.3.2.2"><span class="sec-nr">4.3.2.2</span> <span class="sec-title">Compilation 
+of mutually dependent code</span></a></div>
+<div class="toc-h4"><a class="sec" href="consulting.html#sec:4.3.2.3"><span class="sec-nr">4.3.2.3</span> <span class="sec-title">Compilation 
 with multiple threads</span></a></div>
 <div class="toc-h3"><a class="sec" href="consulting.html#sec:4.3.3"><span class="sec-nr">4.3.3</span> <span class="sec-title">Quick 
 load files</span></a></div>
@@ -318,6 +320,9 @@ Grammar rules</span></a></div>
 <div class="toc-h2"><a class="sec" href="db.html"><span class="sec-nr">4.14</span> <span class="sec-title">Database</span></a></div>
 <div class="toc-h3"><a class="sec" href="db.html#sec:4.14.1"><span class="sec-nr">4.14.1</span> <span class="sec-title">Managing 
 (dynamic) predicates</span></a></div>
+<div class="toc-h4"><a class="sec" href="db.html#sec:4.14.1.1"><span class="sec-nr">4.14.1.1</span> <span class="sec-title">Transactions</span></a></div>
+<div class="toc-h4"><a class="sec" href="db.html#sec:4.14.1.2"><span class="sec-nr">4.14.1.2</span> <span class="sec-title">Impact 
+of transactions</span></a></div>
 <div class="toc-h3"><a class="sec" href="db.html#sec:4.14.2"><span class="sec-nr">4.14.2</span> <span class="sec-title">The 
 recorded database</span></a></div>
 <div class="toc-h3"><a class="sec" href="db.html#sec:4.14.3"><span class="sec-nr">4.14.3</span> <span class="sec-title">Flags</span></a></div>
@@ -384,7 +389,9 @@ number examples</span></a></div>
 numbers or floats</span></a></div>
 <div class="toc-h4"><a class="sec" href="arith.html#sec:4.27.2.4"><span class="sec-nr">4.27.2.4</span> <span class="sec-title">IEEE 
 754 floating point arithmetic</span></a></div>
-<div class="toc-h4"><a class="sec" href="arith.html#sec:4.27.2.5"><span class="sec-nr">4.27.2.5</span> <span class="sec-title">Arithmetic 
+<div class="toc-h4"><a class="sec" href="arith.html#sec:4.27.2.5"><span class="sec-nr">4.27.2.5</span> <span class="sec-title">Floating 
+point arithmetic precision</span></a></div>
+<div class="toc-h4"><a class="sec" href="arith.html#sec:4.27.2.6"><span class="sec-nr">4.27.2.6</span> <span class="sec-title">Arithmetic 
 Functions</span></a></div>
 <div class="toc-h2"><a class="sec" href="miscarith.html"><span class="sec-nr">4.28</span> <span class="sec-title">Misc 
 arithmetic support predicates</span></a></div>
@@ -409,13 +416,15 @@ Control</span></a></div>
 System Interaction</span></a></div>
 <div class="toc-h3"><a class="sec" href="system.html#sec:4.35.1"><span class="sec-nr">4.35.1</span> <span class="sec-title">Windows-specific 
 Operating System Interaction</span></a></div>
-<div class="toc-h3"><a class="sec" href="system.html#sec:4.35.2"><span class="sec-nr">4.35.2</span> <span class="sec-title">Dealing 
+<div class="toc-h3"><a class="sec" href="system.html#sec:4.35.2"><span class="sec-nr">4.35.2</span> <span class="sec-title">Apple 
+specific Operating System Interaction</span></a></div>
+<div class="toc-h3"><a class="sec" href="system.html#sec:4.35.3"><span class="sec-nr">4.35.3</span> <span class="sec-title">Dealing 
 with time and date</span></a></div>
-<div class="toc-h4"><a class="sec" href="system.html#sec:4.35.2.1"><span class="sec-nr">4.35.2.1</span> <span class="sec-title">Time 
+<div class="toc-h4"><a class="sec" href="system.html#sec:4.35.3.1"><span class="sec-nr">4.35.3.1</span> <span class="sec-title">Time 
 and date data structures</span></a></div>
-<div class="toc-h4"><a class="sec" href="system.html#sec:4.35.2.2"><span class="sec-nr">4.35.2.2</span> <span class="sec-title">Time 
+<div class="toc-h4"><a class="sec" href="system.html#sec:4.35.3.2"><span class="sec-nr">4.35.3.2</span> <span class="sec-title">Time 
 and date predicates</span></a></div>
-<div class="toc-h3"><a class="sec" href="system.html#sec:4.35.3"><span class="sec-nr">4.35.3</span> <span class="sec-title">Controlling 
+<div class="toc-h3"><a class="sec" href="system.html#sec:4.35.4"><span class="sec-nr">4.35.4</span> <span class="sec-title">Controlling 
 the <b>swipl-win.exe</b> console window</span></a></div>
 <div class="toc-h2"><a class="sec" href="files.html"><span class="sec-nr">4.36</span> <span class="sec-title">File 
 System Interaction</span></a></div>
@@ -425,30 +434,34 @@ Top-level Manipulation</span></a></div>
 a Protocol of the User Interaction</span></a></div>
 <div class="toc-h2"><a class="sec" href="debugger.html"><span class="sec-nr">4.39</span> <span class="sec-title">Debugging 
 and Tracing Programs</span></a></div>
-<div class="toc-h2"><a class="sec" href="statistics.html"><span class="sec-nr">4.40</span> <span class="sec-title">Obtaining 
+<div class="toc-h2"><a class="sec" href="debug-determinism.html"><span class="sec-nr">4.40</span> <span class="sec-title">Debugging 
+and declaring determinism</span></a></div>
+<div class="toc-h2"><a class="sec" href="builtin-statistics.html"><span class="sec-nr">4.41</span> <span class="sec-title">Obtaining 
 Runtime Statistics</span></a></div>
-<div class="toc-h2"><a class="sec" href="profile.html"><span class="sec-nr">4.41</span> <span class="sec-title">Execution 
+<div class="toc-h2"><a class="sec" href="profile.html"><span class="sec-nr">4.42</span> <span class="sec-title">Execution 
 profiling</span></a></div>
-<div class="toc-h3"><a class="sec" href="profile.html#sec:4.41.1"><span class="sec-nr">4.41.1</span> <span class="sec-title">Profiling 
+<div class="toc-h3"><a class="sec" href="profile.html#sec:4.42.1"><span class="sec-nr">4.42.1</span> <span class="sec-title">Profiling 
 predicates</span></a></div>
-<div class="toc-h3"><a class="sec" href="profile.html#sec:4.41.2"><span class="sec-nr">4.41.2</span> <span class="sec-title">Visualizing 
+<div class="toc-h3"><a class="sec" href="profile.html#sec:4.42.2"><span class="sec-nr">4.42.2</span> <span class="sec-title">Visualizing 
 profiling data</span></a></div>
-<div class="toc-h3"><a class="sec" href="profile.html#sec:4.41.3"><span class="sec-nr">4.41.3</span> <span class="sec-title">Information 
+<div class="toc-h3"><a class="sec" href="profile.html#sec:4.42.3"><span class="sec-nr">4.42.3</span> <span class="sec-title">Information 
 gathering</span></a></div>
-<div class="toc-h4"><a class="sec" href="profile.html#sec:4.41.3.1"><span class="sec-nr">4.41.3.1</span> <span class="sec-title">Profiling 
+<div class="toc-h4"><a class="sec" href="profile.html#sec:4.42.3.1"><span class="sec-nr">4.42.3.1</span> <span class="sec-title">Profiling 
 in the Windows Implementation</span></a></div>
-<div class="toc-h2"><a class="sec" href="memory.html"><span class="sec-nr">4.42</span> <span class="sec-title">Memory 
+<div class="toc-h2"><a class="sec" href="memory.html"><span class="sec-nr">4.43</span> <span class="sec-title">Memory 
 Management</span></a></div>
-<div class="toc-h3"><a class="sec" href="memory.html#sec:4.42.1"><span class="sec-nr">4.42.1</span> <span class="sec-title">Garbage 
+<div class="toc-h3"><a class="sec" href="memory.html#sec:4.43.1"><span class="sec-nr">4.43.1</span> <span class="sec-title">Garbage 
 collection</span></a></div>
-<div class="toc-h3"><a class="sec" href="memory.html#sec:4.42.2"><span class="sec-nr">4.42.2</span> <span class="sec-title">Heap 
+<div class="toc-h3"><a class="sec" href="memory.html#sec:4.43.2"><span class="sec-nr">4.43.2</span> <span class="sec-title">Heap 
 memory (malloc)</span></a></div>
-<div class="toc-h2"><a class="sec" href="DDE.html"><span class="sec-nr">4.43</span> <span class="sec-title">Windows 
+<div class="toc-h4"><a class="sec" href="memory.html#sec:4.43.2.1"><span class="sec-nr">4.43.2.1</span> <span class="sec-title">TCMalloc 
+control predicates</span></a></div>
+<div class="toc-h2"><a class="sec" href="DDE.html"><span class="sec-nr">4.44</span> <span class="sec-title">Windows 
 DDE interface</span></a></div>
-<div class="toc-h3"><a class="sec" href="DDE.html#sec:4.43.1"><span class="sec-nr">4.43.1</span> <span class="sec-title">DDE 
+<div class="toc-h3"><a class="sec" href="DDE.html#sec:4.44.1"><span class="sec-nr">4.44.1</span> <span class="sec-title">DDE 
 client interface</span></a></div>
-<div class="toc-h3"><a class="sec" href="DDE.html#sec:4.43.2"><span class="sec-nr">4.43.2</span> <span class="sec-title">DDE 
+<div class="toc-h3"><a class="sec" href="DDE.html#sec:4.44.2"><span class="sec-nr">4.44.2</span> <span class="sec-title">DDE 
 server mode</span></a></div>
-<div class="toc-h2"><a class="sec" href="miscpreds.html"><span class="sec-nr">4.44</span> <span class="sec-title">Miscellaneous</span></a></div>
+<div class="toc-h2"><a class="sec" href="miscpreds.html"><span class="sec-nr">4.45</span> <span class="sec-title">Miscellaneous</span></a></div>
 </div>
 </body></html>

@@ -3,8 +3,9 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  2011-2020, VU University Amsterdam
+    Copyright (c)  2011-2022, VU University Amsterdam
                               CWI, Amsterdam
+                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -42,6 +43,7 @@
 		     [ type(oneof([text,binary])),
 		       alias(atom),
 		       encoding(encoding),
+                       newline(oneof([dos,posix,detect])),
 		       bom(boolean),
 		       create(list(atom)),
 		       eof_action(oneof([eof_code,error,reset])),
@@ -57,6 +59,7 @@
 		       blobs(oneof([portray])),
                        brace_terms(boolean),
 		       character_escapes(boolean),
+                       character_escapes_unicode(boolean),
 		       cycles(boolean),
 		       fullstop(boolean),
 		       nl(boolean),
@@ -69,6 +72,7 @@
 		       portray(boolean),
 		       portray_goal(callable+2), % as in meta_predicate
 		       priority(between(0,1200)),
+                       quote_non_ascii(boolean),
 		       quoted(boolean),
 		       spacing(oneof([standard,next_argument])),
 		       variable_names(list)
@@ -168,7 +172,8 @@
 		       emulator(atom)
 		     ]).
 :- predicate_options(system:thread_create/3, 3,
-		     [ alias(atom),
+		     [ affinity(list(integer)),
+                       alias(atom),
 		       at_exit(callable),
 		       debug(boolean),
 		       inherit_from(any),
@@ -213,4 +218,7 @@
                        multifile(boolean),
                        thread(oneof([local,shared]))
 		     ]).
-
+:- predicate_options(system:prolog_listen/3, 3,
+                     [ as(oneof([first,last])),
+                       name(atom)
+                     ]).
