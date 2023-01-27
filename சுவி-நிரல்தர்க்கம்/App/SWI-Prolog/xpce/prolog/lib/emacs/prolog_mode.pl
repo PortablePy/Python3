@@ -3,9 +3,10 @@
     Author:        Jan Wielemaker and Anjo Anjewierden
     E-mail:        J.Wielemaker@cs.vu.nl
     WWW:           http://www.swi.psy.uva.nl/projects/xpce/
-    Copyright (c)  1985-2020, University of Amsterdam
+    Copyright (c)  1985-2022, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
+                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -48,12 +49,11 @@
 :- use_module(library(prolog_predicate)).       % class prolog_predicate
 :- use_module(library(prolog_source)).
 :- require([ guitracer/0,
-	     tdebug/0,
 	     auto_call/1,
 	     delete_breakpoint/1,
+             set_breakpoint_condition/2,
 	     manpce/1,
 	     prolog_ide/1,
-	     rational/1,
 	     spypce/1,
 	     tracepce/1,
 	     atomic_list_concat/2,
@@ -77,15 +77,26 @@
 	     get_dict/3,
 	     nb_setarg/3,
              pi_head/2,
-	     rational/3,
 	     send_list/3,
 	     setup_call_cleanup/3,
 	     stream_position_data/3,
 	     strip_module/3,
 	     xref_prolog_flag/4,
 	     get_dict/5,
-	     sub_string/5
+	     sub_string/5,
+             head_name_arity/3,
+             extend_goal/3
 	   ]).
+:- if(current_prolog_flag(threads, true)).
+:- require([ tdebug/0
+           ]).
+:- endif.
+:- if(current_prolog_flag(bounded, false)).
+:- require([ rational/1,
+             rational/3
+           ]).
+:- endif.
+
 :- autoload(library(pldoc/doc_process), [comment_modes/2]).
 
 resource(mode_pl_icon, image, image('32x32/doc_pl.xpm')).
@@ -112,6 +123,7 @@ resource(breakpoint,   image, image('16x16/stop.xpm')).
           (spy)                        = button(prolog),
           trace                        = button(prolog),
           break_at                     = key('\\C-cb') + button(prolog),
+          set_breakpoint_condition     = button(prolog),
           delete_breakpoint            = button(prolog),
           -                            = button(prolog),
           edit_breakpoints             = button(prolog),
@@ -259,6 +271,8 @@ user_source_file(F) :-
 ignore_paths_from(library).
 ignore_paths_from(pce_boot).
 
+:- table lib_dir/1.
+
 lib_dir(D) :-
     ignore_paths_from(Category),
     user:file_search_path(Category, X),
@@ -269,16 +283,13 @@ expand_path(X, X) :-
     atomic(X),
     !.
 expand_path(Term, D) :-
-    Term =.. [New, Sub],
-    user:file_search_path(New, D0),
-    expand_path(D0, D1),
-    atomic_list_concat([D1, /, Sub], D).
+   absolute_file_name(Term,D,[solutions(all)]).
 
 
 :- pce_group(indent).
 
 :- pce_global(@prolog_neck_regex,
-              new(regex(':-|:->|:<-|-->'))).
+              new(regex(':-|:->|:<-|-->|=>|\\?=>'))).
 :- pce_global(@prolog_full_stop,
               new(regex('[^-#$&*+./:<=>?@\\\\^`~]\\.($|\\s)'))).
 :- pce_global(@prolog_decl_regex,
@@ -960,7 +971,18 @@ clause_pi((Head :- _), PI) :-
     callable(Head),
     Head \= (_:_),
     pi_head(PI, Head).
+clause_pi((Left => _), PI) :-
+    !,
+    nonvar(Left),
+    (   Left = (Head,_Guard)
+    ->  true
+    ;   Head = Left
+    ),
+    callable(Head),
+    Head \= (_:_),
+    pi_head(PI, Head).
 clause_pi((Head --> _), Name//Arity) :-
+    !,
     callable(Head),
     Head \= (_:_),
     pi_head(Name/Arity, Head).
@@ -1333,14 +1355,8 @@ do_spy(variable(Name, _Type, _Access), M, (Class-Name)) :-
 do_spy(variable(Name, _Type, _Access, _Doc), M, (Class-Name)) :-
     get(M, what_class, Class),
     spypce((Class-Name)).
-do_spy((Head :- _Body), M, Spec) :-
-    prolog_debug_spec(M, Head, Spec),
-    user:spy(Spec).
-do_spy((Head --> _Body), M, Spec) :-
-    dcg_debug_spec(M, Head, Spec),
-    user:spy(Spec).
-do_spy(Head, M, Spec) :-
-    prolog_debug_spec(M, Head, Spec),
+do_spy(Clause, M, Spec) :-
+    rule_debug_spec(Clause, M, Spec),
     user:spy(Spec).
 
 trace(M) :->
@@ -1370,25 +1386,30 @@ do_trace(variable(Name, _Type, _Access), M, (Class-Name)) :-
 do_trace(variable(Name, _Type, _Access, _Doc), M, (Class-Name)) :-
     get(M, what_class, Class),
     tracepce((Class-Name)).
-do_trace((Head :- _Body), M, Spec) :-
-    prolog_debug_spec(M, Head, Spec),
-    @(trace(Spec), user).
-do_trace(Head, M, Spec) :-
-    prolog_debug_spec(M, Head, Spec),
+do_trace(Clause, M, Spec) :-
+    rule_debug_spec(Clause, M, Spec),
     @(trace(Spec), user).
 
-prolog_debug_spec(M, Head, Spec) :-
-    catch(functor(Head, Name, Arity), _, fail),
+rule_debug_spec(((Head,_Guard) => _Body), M, Spec) =>
+    prolog_debug_spec(Head, M, Spec).
+rule_debug_spec((Head => _Body), M, Spec) =>
+    prolog_debug_spec(Head, M, Spec).
+rule_debug_spec((Head --> _Body), M, Spec) =>
+    extend_goal(Head, [_,_], DCGHead),
+    prolog_debug_spec(DCGHead, M, Spec).
+rule_debug_spec((Head :- _Body), M, Spec) =>
+    prolog_debug_spec(Head, M, Spec).
+rule_debug_spec(Head, M, Spec), callable(Head) =>
+    prolog_debug_spec(Head, M, Spec).
+rule_debug_spec(_, _, _) =>
+    fail.
+
+prolog_debug_spec(Head, M, Spec) :-
+    callable(Head),
+    head_name_arity(Head, Name, Arity),
     (   get(M, prolog_module, Module)
     ->  Spec = (Module:Name/Arity)
     ;   Spec = Name/Arity
-    ).
-
-dcg_debug_spec(M, Head, Spec) :-
-    catch(functor(Head, Name, Arity), _, fail),
-    (   get(M, prolog_module, Module)
-    ->  Spec = (Module:Name//Arity)
-    ;   Spec = Name//Arity
     ).
 
                  /*******************************
@@ -1803,14 +1824,26 @@ break_at(M) :->
     ;   send(M, report, error, 'Source file is not loaded')
     ).
 
+set_breakpoint_condition(M, Goal:goal=name) :->
+    "Set a condition on the selected breakpoint"::
+    get(M, selected_breakpoint, Id),
+    set_breakpoint_condition(Id, Goal),
+    send(M, report, inform,
+         'Set condition for breakpoint %d to %s',
+         Id, Goal).
 
 delete_breakpoint(M) :->
     "Delete selected breakpoint"::
+    get(M, selected_breakpoint, Id),
+    delete_breakpoint(Id).
+
+selected_breakpoint(M, Id:int) :<-
+    "Get the Id of the selected breakpoint"::
     (   get(M, selected_fragment, F),
-        send(F, instance_of, break_fragment),
-        get(F, breakpoint_id, Id)
-    ->  delete_breakpoint(Id)
-    ;   send(M, report, warning, 'No selected breakpoint')
+        send(F, instance_of, break_fragment)
+    ->  get(F, breakpoint_id, Id)
+    ;   send(M, report, warning, 'No selected breakpoint'),
+        fail
     ).
 
 setup_margin(M) :->
@@ -2260,11 +2293,8 @@ set_fragment_context(_, _).
 
 set_fragment_context(Fragment, P, Context) :-
     send(Fragment, has_send_method, P),
-    (   rational(Context),
-        \+ integer(Context)
-    ->  rational(Context, Num, Den),
-        format(string(Ctx), '~d/~d', [Num, Den])
-    ->  send(Fragment, P, Ctx)
+    (   rational_context(Context, String)
+    ->  send(Fragment, P, String)
     ;   atomic(Context)
     ->  send(Fragment, P, Context)
     ;   ground(Context),
@@ -2273,6 +2303,17 @@ set_fragment_context(Fragment, P, Context) :-
     ;   true
     ).
 set_fragment_context(_, _, _).
+
+:- if(current_predicate(rational/1)).
+rational_context(Context, String) :-
+    rational(Context),
+    \+ integer(Context),
+    rational(Context, Num, Den),
+    format(string(String), '~d/~d', [Num, Den]).
+:- else.
+rational_context(_,_) :- fail.
+:- endif.
+
 
 context_arg(1, context).
 context_arg(2, context_2).
@@ -2620,6 +2661,7 @@ identify(F) :->
     identify_head(Id, F, Report),
     send(TB, report, status, Report).
 
+identify_head(test, _, 'Unit test').
 identify_head(Class, F, Summary) :-
     get(F, print_name, Name),
     !,
@@ -2636,28 +2678,33 @@ head_property(Head, Text) :-
     \+ hidden_property(Prop, Head),
     (   atomic(Text)
     ->  Text = Prop
-    ;   property_text(Prop, Text)
+    ;   property_text(Prop, Head, Text)
     ).
 
 hidden_property(file(_), _).
+hidden_property(static, _).
 hidden_property(line_count(_), _).
+hidden_property(number_of_rules(_), _).
 hidden_property(nodebug, _).
+hidden_property(defined, _).
+hidden_property(last_modified_generation(_), _).
 hidden_property(interpreted, _).
 hidden_property(visible, _).
+hidden_property(size(S), _) :- S < 1000.
 hidden_property(transparent, Head) :-
     predicate_property(Head, meta_predicate(_)).
 
-property_text(number_of_clauses(N), Text) :-
-    !,
-    (   N == 1
-    ->  Text = '1 clause'
-    ;   atomic_list_concat([N, ' clauses'], Text)
-    ).
-property_text(indexed(List), Text) :-
-    !,
-    (   List = [[1]-_]
+property_text(number_of_clauses(N), Head, Text) =>
+    (   predicate_property(Head, number_of_rules(Rules))
+    ->  true
+    ;   Rules = 0
+    ),
+    Facts is N - Rules,
+    clause_text(Rules, Facts, Text).
+property_text(indexed(List), _, Text) =>
+    (   List = [single(1)-_]
     ->  Text = 'hashed on first argument'
-    ;   List = [[N]-_]
+    ;   List = [single(N)-_]
     ->  int_postfix(N, PostFix),
         format(atom(Text), 'hashed on ~d-~w argument', [N, PostFix])
     ;   pairs_keys(List, Args),
@@ -2665,13 +2712,33 @@ property_text(indexed(List), Text) :-
         atomic_list_concat(Atoms, ', ', ArgText),
         format(atom(Text), 'hashed on arguments ~w', [ArgText])
     ).
-property_text(meta_predicate(Head), Text) :-
-    !,
+property_text(meta_predicate(Head), _, Text) =>
     Head =.. [_|Args],
     Meta =.. [meta_predicate|Args],
     term_to_atom(Meta, Text).
-property_text(Term, Text) :-
+property_text(size(N), _, Text) =>
+    (   N < 1_000
+    ->  format(string(Text), '~D bytes', [N])
+    ;   N < 1_000_000
+    ->  K is N/1024,
+        format(string(Text), '~1f Kb', [K])
+    ;   M is N/(1024*1024),
+        format(string(Text), '~1f Mb', [M])
+    ).
+property_text(Term, _, Text) =>
     term_to_atom(Term, Text).
+
+clause_text(1, 0, Text) =>
+    Text = '1 clause'.
+clause_text(0, 1, Text) =>
+     Text = '1 fact'.
+clause_text(N, 0, Text) =>
+    format(string(Text), '~D clauses', [N]).
+clause_text(0, N, Text) =>
+    format(string(Text), '~D facts', [N]).
+clause_text(R, F, Text) =>
+    Total is R+F, format(string(Text), '~D clauses (~D facts)', [Total, F]).
+
 
 int_postfix(1, st) :- !.
 int_postfix(2, nd) :- !.
@@ -2937,9 +3004,6 @@ identify(F) :->
     !,
     send(F, report, status, Summary).
 
-:- multifile
-    identify/2.
-
 identify_fragment(Term, _F, Text) :-
     phrase(syntax_message(Term), List),
     !,
@@ -3007,6 +3071,18 @@ elements_to_string(List, String) :-
 element_to_string(Fmt-Args, String) :-
     !,
     format(string(String), Fmt, Args).
+element_to_string(ansi(_Style, Fmt, Args), String) :-
+    !,
+    format(string(String), Fmt, Args).
+element_to_string(url(File:Line:Pos), String) :-
+    !,
+    format(string(String), '~w:~w:~w', [File, Line, Pos]).
+element_to_string(url(File:Line), String) :-
+    !,
+    format(string(String), '~w:~w', [File, Line]).
+element_to_string(url(File), String) :-
+    !,
+    format(string(String), '~w', [File]).
 element_to_string(nl, '\n') :- !.
 element_to_string(Atom, Atom).
 
@@ -3034,3 +3110,11 @@ atom_name(Name0, Name) :-
     Name = Name0.
 atom_name(Name0, Name) :-
     format(atom(Name), '~w', [Name0]).
+
+		 /*******************************
+		 *        SINGLE THREAD		*
+		 *******************************/
+
+:- if(\+current_predicate(tdebug/0)).
+tdebug :- debug.
+:- endif.

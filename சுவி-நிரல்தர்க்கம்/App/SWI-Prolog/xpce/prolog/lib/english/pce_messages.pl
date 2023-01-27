@@ -2,7 +2,7 @@
 
     Author:        Jan Wielemaker and Anjo Anjewierden
     E-mail:        J.Wielemaker@vu.nl
-    WWW:           http://www-swi-prolog.org/projects/xpce/
+    WWW:           http://www.swi-prolog.org/packages/xpce/
     Copyright (c)  1995-2014, University of Amsterdam
                               VU University Amsterdam
     All rights reserved.
@@ -43,6 +43,7 @@
 
 :- multifile
     pce_message//1.
+:- '$hide'(pce_message//1).
 
 pce_message(error(pce(ErrorId, Args), _Context)) -->
     { Msg =.. [format|Args],
