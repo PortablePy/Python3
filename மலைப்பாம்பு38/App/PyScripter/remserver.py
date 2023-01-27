@@ -39,7 +39,13 @@ class ModSlaveService(SlaveService):
             import_custom_exceptions = True,
             instantiate_custom_exceptions = True,
             instantiate_oldstyle_exceptions = True,
+            sync_request_timeout = None,
         ))
+
+        # disable compression
+        conn._channel.compress = False
+        self._conn = conn
+
         # shortcuts
         conn.modules = ModuleNamespace(conn.root.getmodule)
         conn.eval = conn.root.eval

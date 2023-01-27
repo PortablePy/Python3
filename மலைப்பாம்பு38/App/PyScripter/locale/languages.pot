@@ -18,7 +18,10 @@ msgstr ""
 msgid "Arabic"
 msgstr ""
 
-msgid "Chinese"
+msgid "Simplified Chinese"
+msgstr ""
+
+msgid "Traditional Chinese"
 msgstr ""
 
 msgid "English"
@@ -40,6 +43,10 @@ msgstr ""
 msgid "Italian"
 msgstr ""
 
+#. Language of Iran
+msgid "Persian"
+msgstr ""
+
 #. Language of Japan, Asia
 msgid "Japanese"
 msgstr ""
@@ -48,7 +55,7 @@ msgstr ""
 msgid "Taqbaylit"
 msgstr ""
 
-#. Language of Portugal, Europe
+#. Language of Poland, Europe
 msgid "Polish"
 msgstr ""
 
