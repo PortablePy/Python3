@@ -3,9 +3,10 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org/projects/xpce/
-    Copyright (c)  2006-2020, University of Amsterdam
+    Copyright (c)  2006-2022, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
+                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -77,18 +78,23 @@
 :- autoload(library(operators),[push_op/3]).
 :- autoload(library(option),[option/2,option/3]).
 :- autoload(library(ordsets),[ord_intersect/2,ord_intersection/3]).
+:- autoload(library(prolog_code), [pi_head/2]).
 :- autoload(library(prolog_source),
 	    [ prolog_canonical_source/2,
 	      prolog_open_source/2,
 	      prolog_close_source/1,
 	      prolog_read_source_term/4
 	    ]).
+
+:- if(exists_source(library(shlib))).
 :- autoload(library(shlib),[current_foreign_library/2]).
+:- endif.
 :- autoload(library(solution_sequences),[distinct/2,limit/2]).
 
 :- if(exists_source(library(pldoc))).
 :- use_module(library(pldoc), []).      % Must be loaded before doc_process
 :- use_module(library(pldoc/doc_process)).
+
 :- endif.
 
 :- predicate_options(xref_source/2, 2,
@@ -354,9 +360,15 @@ xref_setup(Src, In, Options, state(In, Dialect, Xref, [SRef|HRefs])) :-
     set_xref(Xref),
     (   verbose(Src)
     ->  HRefs = []
-    ;   asserta(user:thread_message_hook(_,_,_), Ref),
+    ;   asserta((user:thread_message_hook(_,Level,_) :-
+                     hide_message(Level)),
+                Ref),
         HRefs = [Ref]
     ).
+
+hide_message(warning).
+hide_message(error).
+hide_message(informational).
 
 assert_option(_, Var) :-
     var(Var),
@@ -714,7 +726,8 @@ xref_defined_class(Source, Class, file(File)) :-
 
 :- thread_local
     current_cond/1,
-    source_line/1.
+    source_line/1,
+    current_test_unit/2.
 
 current_source_line(Line) :-
     source_line(Var),
@@ -738,7 +751,8 @@ collect(Src, File, In, Options) :-
         Comments = []
     ;   CommentHandling == store
     ->  CommentOptions = [ process_comment(true) ],
-        Comments = []
+        Comments = [],
+	set_prolog_flag(xref_store_comments, true)
     ;   CommentOptions = [ comments(Comments) ]
     ),
     repeat,
@@ -756,7 +770,8 @@ collect(Src, File, In, Options) :-
                   E, print_message(error, E)),
             erase(Ref)),
         EOF == true,
-    !.
+    !,
+    set_prolog_flag(xref_store_comments, false).
 
 report_syntax_error(E, _, _) :-
     fatal_error(E),
@@ -874,6 +889,20 @@ process((?- Directive), Src) :-
     process_directive(Directive, Src),
     !.
 process((Head :- Body), Src) :-
+    !,
+    assert_defined(Src, Head),
+    process_body(Body, Head, Src).
+process((Left => Body), Src) :-
+    !,
+    (   nonvar(Left),
+        Left = (Head, Guard)
+    ->  assert_defined(Src, Head),
+        process_body(Guard, Head, Src),
+        process_body(Body, Head, Src)
+    ;   assert_defined(Src, Left),
+        process_body(Body, Left, Src)
+    ).
+process(?=>(Head, Body), Src) :-
     !,
     assert_defined(Src, Head),
     process_body(Body, Head, Src).
@@ -1041,6 +1070,12 @@ process_directive(module(Module, Export, Import), Src) :-
     assert_module(Src, Module),
     assert_module_export(Src, Export),
     assert_module3(Import, Src).
+process_directive(begin_tests(Unit, _Options), Src) :-
+    enter_test_unit(Unit, Src).
+process_directive(begin_tests(Unit), Src) :-
+    enter_test_unit(Unit, Src).
+process_directive(end_tests(Unit), Src) :-
+    leave_test_unit(Unit, Src).
 process_directive('$set_source_module'(system), Src) :-
     assert_module(Src, system).     % hack for handling boot/init.pl
 process_directive(pce_begin_class_definition(Name, Meta, Super, Doc), Src) :-
@@ -1196,6 +1231,30 @@ xref_meta_src(Head, Called, _) :-
     Extra is Arity - 1,
     arg(1, Head, G),
     Called = [G+Extra].
+xref_meta_src(Head, Called, _) :-
+    predicate_property('$xref_tmp':Head, meta_predicate(Meta)),
+    !,
+    Meta =.. [_|Args],
+    meta_args(Args, 1, Head, Called).
+
+meta_args([], _, _, []).
+meta_args([H0|T0], I, Head, [H|T]) :-
+    xargs(H0, N),
+    !,
+    arg(I, Head, A),
+    (   N == 0
+    ->  H = A
+    ;   H = (A+N)
+    ),
+    I2 is I+1,
+    meta_args(T0, I2, Head, T).
+meta_args([_|T0], I, Head, T) :-
+    I2 is I+1,
+    meta_args(T0, I2, Head, T).
+
+xargs(N, N) :- integer(N), !.
+xargs(//, 2).
+xargs(^, 0).
 
 apply_pred(call).                               % built-in
 apply_pred(maplist).                            % library(apply_macros)
@@ -1234,6 +1293,7 @@ xref_meta(call(G, _, _, _),     [G+3]).
 xref_meta(call(G, _, _, _, _),  [G+4]).
 xref_meta(not(G),               [G]).
 xref_meta(notrace(G),           [G]).
+xref_meta('$notrace'(G),        [G]).
 xref_meta(\+(G),                [G]).
 xref_meta(ignore(G),            [G]).
 xref_meta(once(G),              [G]).
@@ -1256,6 +1316,9 @@ xref_meta(thread_at_exit(A),    [A]).
 xref_meta(thread_initialization(A), [A]).
 xref_meta(engine_create(_,A,_), [A]).
 xref_meta(engine_create(_,A,_,_), [A]).
+xref_meta(transaction(A),       [A]).
+xref_meta(transaction(A,B,_),   [A,B]).
+xref_meta(snapshot(A),          [A]).
 xref_meta(predsort(A,_,_),      [A+3]).
 xref_meta(call_cleanup(A, B),   [A, B]).
 xref_meta(call_cleanup(A, _, B),[A, B]).
@@ -1268,6 +1331,8 @@ xref_meta(assertion(G),         [G]).   % library(debug)
 xref_meta(freeze(_, G),         [G]).
 xref_meta(when(C, A),           [C, A]).
 xref_meta(time(G),              [G]).   % development system
+xref_meta(call_time(G, _),      [G]).   % development system
+xref_meta(call_time(G, _, _),   [G]).   % development system
 xref_meta(profile(G),           [G]).
 xref_meta(at_halt(G),           [G]).
 xref_meta(call_with_time_limit(_, G), [G]).
@@ -1292,6 +1357,7 @@ xref_meta(prolog_listen(Ev,G,_),[G+N]) :- event_xargs(Ev, N).
 xref_meta(tnot(G),		[G]).
 xref_meta(not_exists(G),	[G]).
 xref_meta(with_tty_raw(G),	[G]).
+xref_meta(residual_goals(G),    [G+2]).
 
                                         % XPCE meta-predicates
 xref_meta(pce_global(_, new(_)), _) :- !, fail.
@@ -1429,6 +1495,9 @@ process_body(Body, Origin, Src) :-
 process_goal(Var, _, _, _) :-
     var(Var),
     !.
+process_goal(_:Goal, _, _, _) :-
+    var(Goal),
+    !.
 process_goal(Goal, Origin, Src, P) :-
     Goal = (_,_),                               % problems
     !,
@@ -1445,7 +1514,12 @@ process_goal(Goal, Origin, Src, P) :-
         ->  true
         ;   M = user
         ),
-        (   predicate_property(M:Goal, imported_from(IM))
+        pi_head(PI, M:Goal),
+        (   current_predicate(PI),
+            predicate_property(M:Goal, imported_from(IM))
+        ->  true
+        ;   PI = M:Name/Arity,
+            '$find_library'(M, Name, Arity, IM, _Library)
         ->  true
         ;   IM = M
         ),
@@ -1666,6 +1740,17 @@ partial_evaluate(_, _).
 
 eval(X = Y) :-
     unify_with_occurs_check(X, Y).
+
+		 /*******************************
+		 *        PLUNIT SUPPORT	*
+		 *******************************/
+
+enter_test_unit(Unit, _Src) :-
+    current_source_line(Line),
+    asserta(current_test_unit(Unit, Line)).
+
+leave_test_unit(Unit, _Src) :-
+    retractall(current_test_unit(Unit, _)).
 
 
                  /*******************************
@@ -2064,7 +2149,10 @@ negate(else_false, else_false).
 public_list([(:- module(Module, Export0))|Decls], Path,
             Module, Meta, MT, Export, Rest, Public, PT) :-
     !,
-    append(Export0, Reexport, Export),
+    (   is_list(Export0)
+    ->  append(Export0, Reexport, Export)
+    ;   Reexport = Export
+    ),
     public_list_(Decls, Path, Meta, MT, Reexport, Rest, Public, PT).
 public_list([(:- encoding(_))|Decls], Path,
             Module, Meta, MT, Export, Rest, Public, PT) :-
@@ -2415,6 +2503,16 @@ expand_hide_called(pce_principal:pce_lazy_get_method(_,_,_)).
 expand_hide_called(pce_principal:pce_lazy_send_method(_,_,_)).
 
 assert_defined(Src, Goal) :-
+    Goal = test(_Test),
+    current_test_unit(Unit, Line),
+    assert_called(Src, '<test_unit>'(Unit), Goal, Line),
+    fail.
+assert_defined(Src, Goal) :-
+    Goal = test(_Test, _Options),
+    current_test_unit(Unit, Line),
+    assert_called(Src, '<test_unit>'(Unit), Goal, Line),
+    fail.
+assert_defined(Src, Goal) :-
     defined(Goal, Src, _),
     !.
 assert_defined(Src, Goal) :-
@@ -2713,6 +2811,15 @@ generalise(pce_principal:get_implementation(Id, _, _, _),
     atom(Id),
     !.
 generalise('<directive>'(Line), '<directive>'(Line)) :- !.
+generalise(test(Test), test(Test)) :-
+    current_test_unit(_,_),
+    ground(Test),
+    !.
+generalise(test(Test, _), test(Test, _)) :-
+    current_test_unit(_,_),
+    ground(Test),
+    !.
+generalise('<test_unit>'(Line), '<test_unit>'(Line)) :- !.
 generalise(Module:Goal0, Module:Goal) :-
     atom(Module),
     !,

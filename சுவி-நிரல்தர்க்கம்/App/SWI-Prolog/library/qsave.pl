@@ -3,9 +3,10 @@
     Author:        Jan Wielemaker
     E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (c)  1995-2020, University of Amsterdam
+    Copyright (c)  1995-2022, University of Amsterdam
                               VU University Amsterdam
                               CWI, Amsterdam
+                              SWI-Prolog Solutions b.v.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -43,6 +44,8 @@
 :- use_module(library(option)).
 :- use_module(library(error)).
 :- use_module(library(apply)).
+:- autoload(library(shlib), [current_foreign_library/2]).
+:- autoload(library(prolog_autoload), [autoload_all/1]).
 
 /** <module> Save current program as a state or executable
 
@@ -73,9 +76,11 @@ save_option(toplevel,    callable,
             "Toplevel goal").
 save_option(init_file,   atom,
             "Application init file").
+save_option(pce,         boolean,
+            "Do (not) include the xpce graphics subsystem").
 save_option(packs,       boolean,
             "Do (not) attach packs").
-save_option(class,       oneof([runtime,development]),
+save_option(class,       oneof([runtime,development,prolog]),
             "Development state").
 save_option(op,          oneof([save,standard]),
             "Save operators").
@@ -97,6 +102,10 @@ save_option(verbose,     boolean,
             "Be more verbose about the state creation").
 save_option(undefined,   oneof([ignore,error]),
             "How to handle undefined predicates").
+save_option(on_error,    oneof([print,halt,status]),
+            "How to handle errors").
+save_option(on_warning,  oneof([print,halt,status]),
+            "How to handle warnings").
 
 term_expansion(save_pred_options,
                (:- predicate_options(qsave_program/2, 2, Options))) :-
@@ -126,12 +135,11 @@ qsave_program(File) :-
     qsave_program(File, []).
 
 qsave_program(FileBase, Options0) :-
-    meta_options(is_meta, Options0, Options),
-    check_options(Options),
-    exe_file(FileBase, File, Options),
-    option(class(SaveClass),    Options, runtime),
-    option(init_file(InitFile), Options, DefInit),
-    default_init_file(SaveClass, DefInit),
+    meta_options(is_meta, Options0, Options1),
+    check_options(Options1),
+    exe_file(FileBase, File, Options1),
+    option(class(SaveClass), Options1, runtime),
+    qsave_init_file_option(SaveClass, Options1, Options),
     prepare_entry_points(Options),
     save_autoload(Options),
     setup_call_cleanup(
@@ -143,7 +151,7 @@ qsave_program(FileBase, Options0) :-
                                      % running on this state
           setup_call_catcher_cleanup(
               open(File, write, StateOut, [type(binary)]),
-              write_state(StateOut, SaveClass, InitFile, Options),
+              write_state(StateOut, SaveClass, Options),
               Reason,
               finalize_state(Reason, StateOut, File))
         ),
@@ -151,19 +159,16 @@ qsave_program(FileBase, Options0) :-
     cleanup,
     !.
 
-write_state(StateOut, SaveClass, InitFile, Options) :-
+write_state(StateOut, SaveClass, Options) :-
     make_header(StateOut, SaveClass, Options),
     setup_call_cleanup(
         zip_open_stream(StateOut, RC, []),
-        write_zip_state(RC, SaveClass, InitFile, Options),
+        write_zip_state(RC, SaveClass, Options),
         zip_close(RC, [comment('SWI-Prolog saved state')])),
     flush_output(StateOut).
 
-write_zip_state(RC, SaveClass, InitFile, Options) :-
-    save_options(RC, SaveClass,
-                 [ init_file(InitFile)
-                 | Options
-                 ]),
+write_zip_state(RC, SaveClass, Options) :-
+    save_options(RC, SaveClass, Options),
     save_resources(RC, SaveClass),
     lock_files(SaveClass),
     save_program(RC, SaveClass, Options),
@@ -195,15 +200,18 @@ exe_file(Base, Exe, Options) :-
     file_name_extension(Base, exe, Exe).
 exe_file(Exe, Exe, _).
 
-default_init_file(runtime, none) :- !.
-default_init_file(_,       InitFile) :-
-    '$cmd_option_val'(init_file, InitFile).
-
 delete_if_exists(File) :-
     (   exists_file(File)
     ->  delete_file(File)
     ;   true
     ).
+
+qsave_init_file_option(runtime, Options1, Options) :-
+    \+ option(init_file(_), Options1),
+    !,
+    Options = [init_file(none)|Options1].
+qsave_init_file_option(_, Options, Options).
+
 
                  /*******************************
                  *           HEADER             *
@@ -212,29 +220,17 @@ delete_if_exists(File) :-
 %!  make_header(+Out:stream, +SaveClass, +Options) is det.
 
 make_header(Out, _, Options) :-
-    option(emulator(OptVal), Options),
+    stand_alone(Options),
     !,
-    absolute_file_name(OptVal, [access(read)], Emulator),
+    emulator(Emulator, Options),
     setup_call_cleanup(
         open(Emulator, read, In, [type(binary)]),
         copy_stream_data(In, Out),
         close(In)).
-make_header(Out, _, Options) :-
-    (   current_prolog_flag(windows, true)
-    ->  DefStandAlone = true
-    ;   DefStandAlone = false
-    ),
-    option(stand_alone(true), Options, DefStandAlone),
-    !,
-    current_prolog_flag(executable, Executable),
-    setup_call_cleanup(
-        open(Executable, read, In, [type(binary)]),
-        copy_stream_data(In, Out),
-        close(In)).
-make_header(Out, SaveClass, _Options) :-
+make_header(Out, SaveClass, Options) :-
     current_prolog_flag(unix, true),
     !,
-    current_prolog_flag(executable, Executable),
+    emulator(Emulator, Options),
     current_prolog_flag(posix_shell, Shell),
     format(Out, '#!~w~n', [Shell]),
     format(Out, '# SWI-Prolog saved state~n', []),
@@ -242,8 +238,22 @@ make_header(Out, SaveClass, _Options) :-
     ->  ArgSep = ' -- '
     ;   ArgSep = ' '
     ),
-    format(Out, 'exec ${SWIPL-~w} -x "$0"~w"$@"~n~n', [Executable, ArgSep]).
+    format(Out, 'exec ${SWIPL-~w} -x "$0"~w"$@"~n~n', [Emulator, ArgSep]).
 make_header(_, _, _).
+
+stand_alone(Options) :-
+    (   current_prolog_flag(windows, true)
+    ->  DefStandAlone = true
+    ;   DefStandAlone = false
+    ),
+    option(stand_alone(true), Options, DefStandAlone).
+
+emulator(Emulator, Options) :-
+    (   option(emulator(OptVal), Options)
+    ->  absolute_file_name(OptVal, [access(read)], Emulator)
+    ;   current_prolog_flag(executable, Emulator)
+    ).
+
 
 
                  /*******************************
@@ -267,6 +277,7 @@ doption(init_file).
 doption(system_init_file).
 doption(class).
 doption(home).
+doption(nosignals).
 
 %!  save_options(+ArchiveHandle, +SaveClass, +Options)
 %
@@ -280,12 +291,12 @@ doption(home).
 save_options(RC, SaveClass, Options) :-
     zipper_open_new_file_in_zip(RC, '$prolog/options.txt', Fd, []),
     (   doption(OptionName),
-            '$cmd_option_val'(OptionName, OptionVal0),
-            save_option_value(SaveClass, OptionName, OptionVal0, OptionVal1),
-            OptTerm =.. [OptionName,OptionVal2],
-            (   option(OptTerm, Options)
+            (   OptTerm =.. [OptionName,OptionVal2],
+                option(OptTerm, Options)
             ->  convert_option(OptionName, OptionVal2, OptionVal, FmtVal)
-            ;   OptionVal = OptionVal1,
+            ;   '$cmd_option_val'(OptionName, OptionVal0),
+                save_option_value(SaveClass, OptionName, OptionVal0, OptionVal1),
+                OptionVal = OptionVal1,
                 FmtVal = '~w'
             ),
             atomics_to_string(['~w=', FmtVal, '~n'], Fmt),
@@ -668,14 +679,16 @@ save_predicate(P, SaveClass) :-
     feedback('~nsaving ~w/~d ', [F, A]),
     (   (   H = resource(_,_)
         ;   H = resource(_,_,_)
-        ),
-        SaveClass \== development
-    ->  save_attribute(P, (dynamic)),
-        (   M == user
-        ->  save_attribute(P, (multifile))
-        ),
-        feedback('(Skipped clauses)', []),
-        fail
+        )
+    ->  (   SaveClass == development
+        ->  true
+        ;   save_attribute(P, (dynamic)),
+            (   M == user
+            ->  save_attribute(P, (multifile))
+            ),
+            feedback('(Skipped clauses)', []),
+            fail
+        )
     ;   true
     ),
     (   no_save(P)
@@ -998,7 +1011,7 @@ strip_file(File, Stripped) :-
 strip_file(File, File).
 
 do_strip_file(Strip, File, Stripped) :-
-    format(atom(Cmd), '"~w" -o "~w" "~w"',
+    format(atom(Cmd), '"~w" -x -o "~w" "~w"',
            [Strip, Stripped, File]),
     shell(Cmd),
     exists_file(Stripped).
@@ -1242,9 +1255,23 @@ glob_match(Pattern, File) :-
 qsave_toplevel :-
     current_prolog_flag(os_argv, Argv),
     qsave_options(Argv, Files, Options),
+    set_on_error(Options),
     '$cmd_option_val'(compileout, Out),
     user:consult(Files),
+    maybe_exit_on_errors,
     qsave_program(Out, user:Options).
+
+set_on_error(Options) :-
+    option(on_error(_), Options), !.
+set_on_error(_Options) :-
+    set_prolog_flag(on_error, status).
+
+maybe_exit_on_errors :-
+    '$exit_code'(Code),
+    (   Code =\= 0
+    ->  halt
+    ;   true
+    ).
 
 qsave_options([], [], []).
 qsave_options([--|_], [], []) :-
@@ -1256,7 +1283,8 @@ qsave_options(['-c'|T0], Files, Options) :-
 qsave_options([O|T0], Files, [Option|T]) :-
     string_concat(--, Opt, O),
     split_string(Opt, =, '', [NameS|Rest]),
-    atom_string(Name, NameS),
+    split_string(NameS, '-', '', NameParts),
+    atomic_list_concat(NameParts, '_', Name),
     qsave_option(Name, OptName, Rest, Value),
     !,
     Option =.. [OptName, Value],
@@ -1277,7 +1305,7 @@ qsave_option(Name, Name, [], true) :-
     save_option(Name, boolean, _),
     !.
 qsave_option(NoName, Name, [], false) :-
-    atom_concat('no-', Name, NoName),
+    atom_concat('no_', Name, NoName),
     save_option(Name, boolean, _),
     !.
 qsave_option(Name, Name, ValueStrings, Value) :-

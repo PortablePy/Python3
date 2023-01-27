@@ -38,7 +38,7 @@
 :- use_module(library(settings)).
 :- use_module(library(broadcast)).
 
-:- setting(version, atom, 'jquery-1.11.3.min.js',
+:- setting(version, atom, 'jquery-3.6.0.min.js',
            'File name for jquery.js, served as HTML resource "jquery"').
 
 /** <module> Provide JQuery

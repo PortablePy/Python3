@@ -179,6 +179,7 @@ compiled(system:'$cut'/0).
 compiled(system:'$reset'/0).
 compiled(system:'$call_continuation'/1).
 compiled(system:'$shift'/1).
+compiled(system:'$shift_for_copy'/1).
 compiled('$engines':'$yield'/0).
 
 %!  not_always_present(+PI) is semidet.
@@ -382,11 +383,17 @@ list_void_declarations :-
                           check(void_declaration(P, Attr)))
         ),
         fail
+    ;   predicate_property(P, discontiguous),
+        \+ (predicate_property(P, number_of_clauses(N)), N > 0),
+        print_message(warning,
+                      check(void_declaration(P, discontiguous))),
+        fail
     ;   true
     ).
 
 void_attribute(public).
 void_attribute(volatile).
+void_attribute(det).
 
 %!  list_trivial_fails is det.
 %!  list_trivial_fails(+Options) is det.
@@ -627,6 +634,11 @@ list_format_errors(Options) :-
     ;   true
     ).
 
+format_warning(system:format(Format, Args), Msg) :-
+    nonvar(Format),
+    nonvar(Args),
+    \+ is_list(Args),
+    Msg = format_argv(Args).
 format_warning(system:format(Format, Args), Msg) :-
     ground(Format),
     (   is_list(Args)
@@ -1052,3 +1064,5 @@ check_message(format_argc(Expected, InList)) -->
 check_message(format_template(Formal)) -->
     { message_to_string(error(Formal, _), Msg) },
     [ 'Invalid template: ~s'-[Msg] ].
+check_message(format_argv(Args)) -->
+    [ 'Arguments are not in a list (deprecated): ~p'-[Args] ].

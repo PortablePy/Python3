@@ -72,11 +72,19 @@
 
 sicstus:rename_module(system, sicstus_system).
 
-/** <module> SICStus-3 library system
+/** <module> SICStus 3-compatible library(system).
 
+@tbd	This library is incomplete.
+	As of SICStus 3.12.11, the following predicates are missing:
 
+	* delete_file/2
+	* directory_files/2
+	* file_exists/2
+	* file_property/2
+	* host_id/1
+	* kill/2
 
-@tbd	This library is incomplete
+@see	https://sicstus.sics.se/sicstus/docs/3.12.11/html/sicstus/System-Utilities.html
 */
 
 %%	environ(?Name, ?Value) is nondet.
@@ -160,12 +168,17 @@ now(When) :-
 	When is integer(Now).
 
 %%	datime(+When, -Datime) is det.
+%%	datime(-When, +Datime) is det.
 %
 %	True when Datime is a  datime/6   record  that reflects the time
 %	stamp When.
 %
 %	@compat sicstus
 
+datime(When, datime(Year,Month,Day,Hour,Min,Sec)) :-
+	var(When),
+	!,
+	date_time_stamp(date(Year,Month,Day,Hour,Min,Sec,_,_,_), When).
 datime(When, datime(Year,Month,Day,Hour,Min,Sec)) :-
 	stamp_date_time(When, date(Year,Month,Day,Hour,Min,SecF,_,_,_), local),
 	Sec is integer(SecF).
