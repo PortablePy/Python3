@@ -9,10 +9,10 @@ get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" 
 
 # Version information
 set(SWIPL_VERSION_COUNT 3)
-set(SWIPL_VERSION_MAJOR 8)
-set(SWIPL_VERSION_MINOR 2)
+set(SWIPL_VERSION_MAJOR 9)
+set(SWIPL_VERSION_MINOR 0)
 set(SWIPL_VERSION_PATCH 4)
-set(SWIPL_VERSION_STRING 8.2.4)
+set(SWIPL_VERSION_STRING 9.0.4)
 
 # Location suitable for passing to PL_initialise() as argv[0]
 set(SWIPL_EXECUTABLE "${PACKAGE_PREFIX_DIR}/./bin/libswipl.dll")
