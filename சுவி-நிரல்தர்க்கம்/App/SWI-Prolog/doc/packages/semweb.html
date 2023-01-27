@@ -3758,6 +3758,33 @@ for processing RDF data.
 </dl>
 
 </dd>
+<dt class="pubdef"><span class="pred-tag">[semidet]</span><a id="turtle_pn_local/1"><strong>turtle_pn_local</strong>(<var>+Atom:atom</var>)</a></dt>
+<dd class="defbody">
+True if <var>Atom</var> is a valid Turtle <i>PN_LOCAL</i> name. The 
+PN_LOCAL name is what can follow the : in a resource. In the new Turtle, 
+this can be anything and this function becomes meaningless. In the old 
+turtle, PN_LOCAL is defined similar (but not equal) to an XML name. This 
+predicate is used by <a class="pred" href="#rdf_save_turtle/2">rdf_save_turtle/2</a> 
+to write files such that can be read by old parsers.
+
+<dl class="tags">
+<dt class="tag">See also</dt>
+<dd>
+<span class="pred-ext">xml_name/2</span>.
+</dd>
+</dl>
+
+</dd>
+<dt class="pubdef"><span class="pred-tag">[det]</span><a id="turtle_write_quoted_string/2"><strong>turtle_write_quoted_string</strong>(<var>+Out, 
++Value</var>)</a></dt>
+<dd class="defbody">
+Same as <code>turtle_write_quoted_string(Out, Value, false)</code>, 
+writing a string with only a single <code>"</code>. Embedded newlines 
+are escapes as <code>\n</code>.</dd>
+<dt class="pubdef"><span class="pred-tag">[det]</span><a id="turtle_write_uri/2"><strong>turtle_write_uri</strong>(<var>+Out, 
++Value</var>)</a></dt>
+<dd class="defbody">
+Write a URI as <code>&lt;...&gt;</code></dd>
 <dt class="multidef"><span class="pred-tag">[multifile]</span><a id="rdf_db:rdf_load_stream/3"><span class="module">rdf_db</span>:<strong>rdf_load_stream</strong>(<var>+Format, 
 +Stream, :Options</var>)</a></dt>
 <dd class="defbody">
@@ -4893,7 +4920,7 @@ repository. For example:
 <dt class="pubdef"><a id="sparql_read_xml_result/2"><strong>sparql_read_xml_result</strong>(<var>+Input, 
 -Result</var>)</a></dt>
 <dd class="defbody">
-Specs from <a class="url" href="http://www.w3.org/TR/rdf-sparql-XMLres/.">http://www.w3.org/TR/rdf-sparql-XMLres/.</a> 
+Specs from <a class="url" href="http://www.w3.org/TR/rdf-sparql-XMLres/">http://www.w3.org/TR/rdf-sparql-XMLres/</a>. 
 The returned
 <var>Result</var> term is of the format:
 
@@ -5455,6 +5482,9 @@ N62909-11-1-7060 and the Dutch national program COMMIT.
 <dt>tokenize_atom/2</dt>
 <dd>
 <a class="idx" href="#idx:tokenizeatom2:26">4.5</a> <a class="idx" href="#idx:tokenizeatom2:29">4.5</a></dd>
+<dt><a class="idx" href="#turtle_pn_local/1">turtle_pn_local/1</a></dt>
+<dt><a class="idx" href="#turtle_write_quoted_string/2">turtle_write_quoted_string/2</a></dt>
+<dt><a class="idx" href="#turtle_write_uri/2">turtle_write_uri/2</a></dt>
 <dt>xhtml</dt>
 <dd>
 <a class="idx" href="#idx:xhtml:24">4.3</a></dd>

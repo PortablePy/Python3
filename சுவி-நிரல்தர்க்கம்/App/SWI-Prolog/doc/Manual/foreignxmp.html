@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual: Section 12.7</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual: Section 12.7</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -241,13 +241,12 @@ of Using the Foreign Interface</span></a></h2>
 <p>Below is an example showing all stages of the declaration of a 
 foreign predicate that transforms atoms possibly holding uppercase 
 letters into an atom only holding lowercase letters. <a class="fig" href="foreignxmp.html#fig:lowercase-c">Figure 
-10</a> shows the C source file, <a class="fig" href="foreignxmp.html#fig:load-foreign">figure 
-11</a> illustrates compiling and loading of foreign code.
+9</a> shows the C source file, <a class="fig" href="foreignxmp.html#fig:load-foreign">figure 
+10</a> illustrates compiling and loading of foreign code.
 
 <pre class="code">
 /*  Include file depends on local installation */
 #include &lt;SWI-Prolog.h&gt;
-#include &lt;stdlib.h&gt;
 #include &lt;string.h&gt;
 #include &lt;ctype.h&gt;
 
@@ -260,6 +259,8 @@ pl_lowercase(term_t u, term_t l)
   if ( !PL_get_atom_chars(u, &amp;s) )
     return PL_warning("lowercase/2: instantiation fault");
   copy = malloc(strlen(s)+1);
+  if ( !copy )
+    return PL_resource_error("memory");
 
   for( q=copy; *s; q++, s++)
     *q = (isupper(*s) ? tolower(*s) : *s);
@@ -277,7 +278,7 @@ install()
 }
 </pre>
 
-<div class="caption"><b>Figure 10 : </b>Lowercase source file</div>
+<div class="caption"><b>Figure 9 : </b>Lowercase source file</div>
 <a id="fig:lowercase-c"></a>
 
 <pre class="code">
@@ -294,7 +295,7 @@ true.
 L = 'hello world!'.
 </pre>
 
-<div class="caption"><b>Figure 11 : </b>Compiling the C source and 
+<div class="caption"><b>Figure 10 : </b>Compiling the C source and 
 loading the object file</div>
 <a id="fig:load-foreign"></a>
 </body></html>

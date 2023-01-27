@@ -579,6 +579,10 @@ Sets the starting line-number for reporting errors.</dd>
 Sets the maximum buffer size in bytes available for input data and CDATA 
 output. If this limit is reached a resource error is raised. Using <code>max_memory(0)</code> 
 (the default) means no resource limit will be enforced.</dd>
+<dt><strong>ignore_doctype</strong>(<var>+Bool</var>)</dt>
+<dd class="defbody">
+If set, doctype declarations in the document will be ignored. This can 
+help prevent XXE attacks</dd>
 <dt><strong>cdata</strong>(<var>+Representation</var>)</dt>
 <dd class="defbody">
 Specify the representation of <em>cdata</em> elements. Supported are

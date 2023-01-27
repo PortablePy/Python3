@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual: Section A.28</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual: Section A.31</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
@@ -233,7 +233,7 @@ table.frame-box
 <a class="nav" href="optparse.html"><img src="prev.gif" alt="Previous"></a>
 <a class="nav" href="pairs.html"><img src="next.gif" alt="Next"></a>
 </div>
-<h2 id="sec:ordsets"><a id="sec:A.28"><span class="sec-nr">A.28</span> <span class="sec-title">library(ordsets): 
+<h2 id="sec:ordsets"><a id="sec:A.31"><span class="sec-nr">A.31</span> <span class="sec-title">library(ordsets): 
 Ordered set manipulation</span></a></h2>
 
 <p><a id="sec:ordsets"></a>
@@ -320,11 +320,13 @@ Use <a class="pred" href="ordsets.html#ord_intersection/3">ord_intersection/3</a
 </dl>
 
 </dd>
-<dt class="pubdef"><a id="ord_intersection/2"><strong>ord_intersection</strong>(<var>+PowerSet, 
+<dt class="pubdef"><span class="pred-tag">[semidet]</span><a id="ord_intersection/2"><strong>ord_intersection</strong>(<var>+PowerSet, 
 -Intersection</var>)</a></dt>
 <dd class="defbody">
 <var>Intersection</var> of a powerset. True when <var>Intersection</var> 
-is an ordered set holding all elements common to all sets in <var>PowerSet</var>.
+is an ordered set holding all elements common to all sets in <var>PowerSet</var>. 
+Fails if
+<var>PowerSet</var> is an empty list.
 
 <dl class="tags">
 <dt class="tag">Compatibility</dt>
@@ -376,8 +378,7 @@ Selectchk/3, specialised for ordered sets. Is true when
 are both sorted lists without duplicates. This implementation is only 
 expected to work for <var>Item</var> ground and either <var>Set1</var> 
 or <var>Set2</var> ground. The "chk" suffix is meant to remind you of <a class="pred" href="builtinlist.html#memberchk/2">memberchk/2</a>, 
-which also expects its first argument to be ground. <code>ord_selectchk(X, S, T)</code> 
-=<var>&gt;</var>
+which also expects its first argument to be ground. <code>ord_selectchk(X, S, T)</code> <code>=&gt;</code>
 <code>ord_memberchk(X, S)</code> &amp; <code>\+</code> <code>ord_memberchk(X, T)</code>.
 
 <dl class="tags">
@@ -438,7 +439,7 @@ Copied from YAP, probably originally by Richard O'Keefe.
 
 </dd>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="ord_union/3"><strong>ord_union</strong>(<var>+Set1, 
-+Set2, ?Union</var>)</a></dt>
++Set2, -Union</var>)</a></dt>
 <dd class="defbody">
 <var>Union</var> is the union of <var>Set1</var> and <var>Set2</var></dd>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="ord_union/4"><strong>ord_union</strong>(<var>+Set1, 

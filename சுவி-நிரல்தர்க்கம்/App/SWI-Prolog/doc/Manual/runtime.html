@@ -2,11 +2,11 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
-<link rel="previous" href="foreignnotes.html">
+<link rel="previous" href="wasm-js-call.html">
 <link rel="next" href="deployment-options.html">
 
 <style type="text/css">
@@ -230,10 +230,10 @@ table.frame-box
 <a class="nav" href="Contents.html"><img src="index.gif" alt="Contents"></a>
 <a class="nav" href="DocIndex.html"><img src="yellow_pages.gif" alt="Index"></a>
 <a class="nav" href="summary.html"><img src="info.gif" alt="Summary"></a>
-<a class="nav" href="foreignnotes.html"><img src="prev.gif" alt="Previous"></a>
+<a class="nav" href="wasm-js-call.html"><img src="prev.gif" alt="Previous"></a>
 <a class="nav" href="deployment-options.html"><img src="next.gif" alt="Next"></a>
 </div>
-<h1 id="sec:runtime"><a id="sec:13"><span class="sec-nr">13</span> <span class="sec-title">Deploying 
+<h1 id="sec:runtime"><a id="sec:14"><span class="sec-nr">14</span> <span class="sec-title">Deploying 
 applications</span></a></h1>
 
 <a id="sec:runtime"></a>
@@ -250,35 +250,35 @@ applications using <em>saved states</em>.
 </div>
 <hr>
 <div class="toc">
-<div class="toc-h2"><a class="sec" href="deployment-options.html"><span class="sec-nr">13.1</span> <span class="sec-title">Deployment 
+<div class="toc-h2"><a class="sec" href="deployment-options.html"><span class="sec-nr">14.1</span> <span class="sec-title">Deployment 
 options</span></a></div>
-<div class="toc-h2"><a class="sec" href="saved-states.html"><span class="sec-nr">13.2</span> <span class="sec-title">Understanding 
+<div class="toc-h2"><a class="sec" href="saved-states.html"><span class="sec-nr">14.2</span> <span class="sec-title">Understanding 
 saved states</span></a></div>
-<div class="toc-h3"><a class="sec" href="saved-states.html#sec:13.2.1"><span class="sec-nr">13.2.1</span> <span class="sec-title">Creating 
+<div class="toc-h3"><a class="sec" href="saved-states.html#sec:14.2.1"><span class="sec-nr">14.2.1</span> <span class="sec-title">Creating 
 a saved state</span></a></div>
-<div class="toc-h3"><a class="sec" href="saved-states.html#sec:13.2.2"><span class="sec-nr">13.2.2</span> <span class="sec-title">Limitations 
+<div class="toc-h3"><a class="sec" href="saved-states.html#sec:14.2.2"><span class="sec-nr">14.2.2</span> <span class="sec-title">Limitations 
 of qsave_program</span></a></div>
-<div class="toc-h3"><a class="sec" href="saved-states.html#sec:13.2.3"><span class="sec-nr">13.2.3</span> <span class="sec-title">Runtimes 
+<div class="toc-h3"><a class="sec" href="saved-states.html#sec:14.2.3"><span class="sec-nr">14.2.3</span> <span class="sec-title">Runtimes 
 and Foreign Code</span></a></div>
-<div class="toc-h2"><a class="sec" href="state-initialization.html"><span class="sec-nr">13.3</span> <span class="sec-title">State 
+<div class="toc-h2"><a class="sec" href="state-initialization.html"><span class="sec-nr">14.3</span> <span class="sec-title">State 
 initialization</span></a></div>
-<div class="toc-h2"><a class="sec" href="program-resources.html"><span class="sec-nr">13.4</span> <span class="sec-title">Using 
+<div class="toc-h2"><a class="sec" href="program-resources.html"><span class="sec-nr">14.4</span> <span class="sec-title">Using 
 program resources</span></a></div>
-<div class="toc-h3"><a class="sec" href="program-resources.html#sec:13.4.1"><span class="sec-nr">13.4.1</span> <span class="sec-title">Resources 
+<div class="toc-h3"><a class="sec" href="program-resources.html#sec:14.4.1"><span class="sec-nr">14.4.1</span> <span class="sec-title">Resources 
 as files</span></a></div>
-<div class="toc-h3"><a class="sec" href="program-resources.html#sec:13.4.2"><span class="sec-nr">13.4.2</span> <span class="sec-title">Access 
+<div class="toc-h3"><a class="sec" href="program-resources.html#sec:14.4.2"><span class="sec-nr">14.4.2</span> <span class="sec-title">Access 
 resources using open_resource</span></a></div>
-<div class="toc-h3"><a class="sec" href="program-resources.html#sec:13.4.3"><span class="sec-nr">13.4.3</span> <span class="sec-title">Declaring 
+<div class="toc-h3"><a class="sec" href="program-resources.html#sec:14.4.3"><span class="sec-nr">14.4.3</span> <span class="sec-title">Declaring 
 resources</span></a></div>
-<div class="toc-h3"><a class="sec" href="program-resources.html#sec:13.4.4"><span class="sec-nr">13.4.4</span> <span class="sec-title">Managing 
+<div class="toc-h3"><a class="sec" href="program-resources.html#sec:14.4.4"><span class="sec-nr">14.4.4</span> <span class="sec-title">Managing 
 resource files</span></a></div>
-<div class="toc-h2"><a class="sec" href="debug-deployed-systems.html"><span class="sec-nr">13.5</span> <span class="sec-title">Debugging 
+<div class="toc-h2"><a class="sec" href="debug-deployed-systems.html"><span class="sec-nr">14.5</span> <span class="sec-title">Debugging 
 and updating deployed systems</span></a></div>
-<div class="toc-h2"><a class="sec" href="protect-code.html"><span class="sec-nr">13.6</span> <span class="sec-title">Protecting 
+<div class="toc-h2"><a class="sec" href="protect-code.html"><span class="sec-nr">14.6</span> <span class="sec-title">Protecting 
 your code</span></a></div>
-<div class="toc-h3"><a class="sec" href="protect-code.html#sec:13.6.1"><span class="sec-nr">13.6.1</span> <span class="sec-title">Obfuscating 
+<div class="toc-h3"><a class="sec" href="protect-code.html#sec:14.6.1"><span class="sec-nr">14.6.1</span> <span class="sec-title">Obfuscating 
 code in saved states</span></a></div>
-<div class="toc-h2"><a class="sec" href="findappfile.html"><span class="sec-nr">13.7</span> <span class="sec-title">Finding 
+<div class="toc-h2"><a class="sec" href="findappfile.html"><span class="sec-nr">14.7</span> <span class="sec-title">Finding 
 Application files</span></a></div>
 </div>
 </body></html>

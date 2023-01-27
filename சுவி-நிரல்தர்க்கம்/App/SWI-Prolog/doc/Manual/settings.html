@@ -2,12 +2,12 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual: Section A.41</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual: Section A.47</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
 <link rel="previous" href="registry.html">
-<link rel="next" href="simplex.html">
+<link rel="next" href="statistics.html">
 
 <style type="text/css">
 
@@ -231,9 +231,9 @@ table.frame-box
 <a class="nav" href="DocIndex.html"><img src="yellow_pages.gif" alt="Index"></a>
 <a class="nav" href="summary.html"><img src="info.gif" alt="Summary"></a>
 <a class="nav" href="registry.html"><img src="prev.gif" alt="Previous"></a>
-<a class="nav" href="simplex.html"><img src="next.gif" alt="Next"></a>
+<a class="nav" href="statistics.html"><img src="next.gif" alt="Next"></a>
 </div>
-<h2 id="sec:settings"><a id="sec:A.41"><span class="sec-nr">A.41</span> <span class="sec-title">library(settings): 
+<h2 id="sec:settings"><a id="sec:A.47"><span class="sec-nr">A.47</span> <span class="sec-title">library(settings): 
 Setting management</span></a></h2>
 
 <p><a id="sec:settings"></a>
@@ -313,6 +313,12 @@ if <var>Name</var> is ground.
 </dl>
 
 </dd>
+<dt class="pubdef"><span class="pred-tag">[det]</span><a id="env/2"><strong>env</strong>(<var>+Name:atom, 
+-Value:number</var>)</a></dt>
+<dt class="pubdef"><span class="pred-tag">[det]</span><a id="env/3"><strong>env</strong>(<var>+Name:atom, 
++Default:number, -Value:number</var>)</a></dt>
+<dd class="defbody">
+Evaluate environment variables on behalf of arithmetic expressions.</dd>
 <dt class="pubdef"><span class="pred-tag">[det]</span><a id="set_setting/2"><strong>set_setting</strong>(<var>:Name, 
 +Value</var>)</a></dt>
 <dd class="defbody">

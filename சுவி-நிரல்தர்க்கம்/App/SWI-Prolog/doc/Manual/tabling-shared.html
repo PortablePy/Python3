@@ -2,11 +2,11 @@
 
 <html>
 <head>
-<title>SWI-Prolog 8.2.4 Reference Manual: Section 7.8</title><link rel="home" href="index.html">
+<title>SWI-Prolog 9.0.4 Reference Manual: Section 7.9</title><link rel="home" href="index.html">
 <link rel="contents" href="Contents.html">
 <link rel="index" href="DocIndex.html">
 <link rel="summary" href="summary.html">
-<link rel="previous" href="tabling-incremental.html">
+<link rel="previous" href="tabling-monotonic.html">
 <link rel="next" href="tabling-restraints.html">
 
 <style type="text/css">
@@ -230,10 +230,10 @@ table.frame-box
 <a class="nav" href="Contents.html"><img src="index.gif" alt="Contents"></a>
 <a class="nav" href="DocIndex.html"><img src="yellow_pages.gif" alt="Index"></a>
 <a class="nav" href="summary.html"><img src="info.gif" alt="Summary"></a>
-<a class="nav" href="tabling-incremental.html"><img src="prev.gif" alt="Previous"></a>
+<a class="nav" href="tabling-monotonic.html"><img src="prev.gif" alt="Previous"></a>
 <a class="nav" href="tabling-restraints.html"><img src="next.gif" alt="Next"></a>
 </div>
-<h2 id="sec:tabling-shared"><a id="sec:7.8"><span class="sec-nr">7.8</span> <span class="sec-title">Shared 
+<h2 id="sec:tabling-shared"><a id="sec:7.9"><span class="sec-nr">7.9</span> <span class="sec-title">Shared 
 tabling</span></a></h2>
 
 <a id="sec:tabling-shared"></a>
@@ -286,7 +286,7 @@ the thread that was filling the table raised an exception (either a
 some thread may have abolished the table. This situation is the same as 
 when the owning thread raised an exception.
 
-<p><h3 id="sec:tabling-shared-abolish"><a id="sec:7.8.1"><span class="sec-nr">7.8.1</span> <span class="sec-title">Abolishing 
+<p><h3 id="sec:tabling-shared-abolish"><a id="sec:7.9.1"><span class="sec-nr">7.9.1</span> <span class="sec-title">Abolishing 
 shared tables</span></a></h3>
 
 <a id="sec:tabling-shared-abolish"></a>
@@ -299,16 +299,16 @@ marked for destruction on completion. The thread that is completing the
 table continues to do so and continues execution with the computed table 
 answers. Any other thread blocks, waiting for the table to complete. 
 Once completed, the table is destroyed and the waiting threads see a
-<em>fresh</em> table<sup class="fn">168<span class="fn-text">Future 
+<em>fresh</em> table<sup class="fn">188<span class="fn-text">Future 
 versions may avoid waiting by converting the abolished shared table to a 
 private table.</span></sup>.
 
 <p>The current implementation never reclaims shared tables. Instead, 
 they remain part of the global variant table and only the answers of the 
 shared table are reclaimed. Future versions may garbage collect such 
-tables. See also <a id="idx:abolishsharedtables0:1979"></a><a class="pred" href="tabling-preds.html#abolish_shared_tables/0">abolish_shared_tables/0</a>.
+tables. See also <a id="idx:abolishsharedtables0:2126"></a><a class="pred" href="tabling-preds.html#abolish_shared_tables/0">abolish_shared_tables/0</a>.
 
-<p><h3 id="sec:tabling-shared-status"><a id="sec:7.8.2"><span class="sec-nr">7.8.2</span> <span class="sec-title">Status 
+<p><h3 id="sec:tabling-shared-status"><a id="sec:7.9.2"><span class="sec-nr">7.9.2</span> <span class="sec-title">Status 
 and future of shared tabling</span></a></h3>
 
 <a id="sec:tabling-shared-status"></a>
@@ -322,8 +322,8 @@ expected to resolve these issues.
 <ul class="latex">
 <li>Shared tabling currently only handles the basic scenario and cannot 
 yet deal with well formed semantics or incremental tabling.
-<li>As described in <a class="sec" href="tabling-shared.html#sec:7.8.1">section 
-7.8.1</a>, abolishing shared tables may cause unnecessary waiting for 
+<li>As described in <a class="sec" href="tabling-shared.html#sec:7.9.1">section 
+7.9.1</a>, abolishing shared tables may cause unnecessary waiting for 
 threads to complete the table.
 <li>Only the answers of shared tables can be reclaimed, not the answer 
 table itself.

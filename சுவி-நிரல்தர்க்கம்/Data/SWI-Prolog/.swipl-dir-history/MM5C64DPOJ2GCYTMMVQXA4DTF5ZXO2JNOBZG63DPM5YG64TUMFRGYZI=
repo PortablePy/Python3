@@ -1,9 +1,0 @@
-halt
-exit
-?
-cat(tom)
-cat (tom) :- true
-exit
-write ('Hello World!),n1
-[user]
-:hello :- format('Hello world~n').
